@@ -28,8 +28,8 @@ impl Position {
 
 impl Display for Position {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let row_char = ('a' as u8 + self.y) as char;
-        let col_char = ('1' as u8 + self.x) as char;
+        let row_char = (b'a' + self.y) as char;
+        let col_char = (b'1' + self.x) as char;
         write!(f, "{}{}", col_char, row_char)
     }
 }

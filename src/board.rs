@@ -12,20 +12,24 @@ impl Default for Board {
 impl Board {
     pub fn place_piece(&mut self, piece: Piece, position: &Position) {
         let index = position.board_index();
-        *self.0.get_mut(index).expect(&format!(
-            "Failed to place piece on board. The position is not in the correct range {:?}",
-            position
-        )) = Some(piece);
+        *self.0.get_mut(index).unwrap_or_else(|| {
+            panic!(
+                "Failed to place piece on board. The position is not in the correct range {:?}",
+                position
+            )
+        }) = Some(piece);
     }
 
     pub fn get_piece(&self, position: &Position) -> Option<&Piece> {
         let index = position.board_index();
         self.0
             .get(index)
-            .expect(&format!(
-                "Failed to get piece. The position is not in the correct range {:?}",
-                position
-            ))
+            .unwrap_or_else(|| {
+                panic!(
+                    "Failed to get piece. The position is not in the correct range {:?}",
+                    position
+                )
+            })
             .as_ref()
     }
 

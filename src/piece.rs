@@ -18,4 +18,6 @@ impl Piece {
     pub fn kind(&self) -> &PieceType {
         &self.kind
     }
+
+    pub fn possible_moves(&self) {}
 }
