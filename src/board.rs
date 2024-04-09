@@ -20,7 +20,7 @@ impl Board {
         }) = Some(piece);
     }
 
-    pub fn get_piece(&self, position: &Position) -> Option<&Piece> {
+    pub fn piece_at(&self, position: &Position) -> Option<&Piece> {
         let index = position.board_index();
         self.0
             .get(index)
@@ -54,7 +54,7 @@ impl Board {
             // Could probably improve this with a trait for the printer of a board
             #[cfg_attr(coverage_nightly, coverage(off))]
             |p| {
-                let Some(piece) = self.get_piece(&p) else {
+                let Some(piece) = self.piece_at(&p) else {
                     return ' ';
                 };
                 match (piece.kind(), piece.color()) {
@@ -87,7 +87,7 @@ mod tests {
         let pos = Position::new_unchecked(0, 0);
         board.place_piece(Piece::new(PieceType::Pawn, Color::White), &pos);
         assert_eq!(
-            board.get_piece(&pos),
+            board.piece_at(&pos),
             Some(&Piece::new(PieceType::Pawn, Color::White))
         );
     }
@@ -105,6 +105,6 @@ mod tests {
     fn get_piece_with_invalid_position() {
         let board = Board::default();
         let pos = Position::new_unchecked(8, 8);
-        board.get_piece(&pos);
+        board.piece_at(&pos);
     }
 }

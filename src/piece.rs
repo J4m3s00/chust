@@ -11,12 +11,12 @@ impl Piece {
         Self { kind, color }
     }
 
-    pub fn color(&self) -> &Color {
-        &self.color
+    pub fn color(&self) -> Color {
+        self.color
     }
 
-    pub fn kind(&self) -> &PieceType {
-        &self.kind
+    pub fn kind(&self) -> PieceType {
+        self.kind
     }
 
     pub fn possible_moves(&self) {}
