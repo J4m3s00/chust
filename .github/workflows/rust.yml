@@ -17,9 +17,10 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Install Rust
-      run: rustup update nightly
-    - name: Select nightly
-      run: rustup default nightly
+      run: |
+        rustup update nightly
+        rustup default nightly
+        rustup component add clippy
     - name: Build
       run: cargo build --verbose
     - name: Run tests
