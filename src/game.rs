@@ -7,6 +7,7 @@ pub enum CastleRights {
     Both,
 }
 
+#[derive(Debug, PartialEq)]
 pub struct Game {
     current_turn: Color,
     board: Board,
@@ -14,10 +15,8 @@ pub struct Game {
 
 impl Default for Game {
     fn default() -> Self {
-        Self {
-            board: Board::default(),
-            current_turn: Color::White,
-        }
+        Fen::parse_game("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+            .expect("Failed to parse default position.")
     }
 }
 

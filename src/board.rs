@@ -1,5 +1,6 @@
 use crate::{piece::Piece, position::Position};
 
+#[derive(Debug, PartialEq)]
 pub struct Board([Option<Piece>; 8 * 8]);
 
 impl Default for Board {

@@ -1,6 +1,6 @@
 use crate::{color::Color, piece_type::PieceType};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Piece {
     kind: PieceType,
     color: Color,
