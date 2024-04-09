@@ -3,4 +3,5 @@
 //fn main() {}
 
 mod color;
+mod piece;
 mod piece_type;
