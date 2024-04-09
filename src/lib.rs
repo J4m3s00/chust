@@ -3,5 +3,6 @@
 //fn main() {}
 
 mod color;
+mod game;
 mod piece;
 mod piece_type;
