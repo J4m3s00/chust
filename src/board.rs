@@ -75,3 +75,36 @@ impl Board {
         );
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{color::Color, piece_type::PieceType};
+
+    #[test]
+    fn test_board_place_piece() {
+        let mut board = Board::default();
+        let pos = Position::new_unchecked(0, 0);
+        board.place_piece(Piece::new(PieceType::Pawn, Color::White), &pos);
+        assert_eq!(
+            board.get_piece(&pos),
+            Some(&Piece::new(PieceType::Pawn, Color::White))
+        );
+    }
+
+    #[test]
+    #[should_panic]
+    fn place_with_invalid_position() {
+        let mut board = Board::default();
+        let pos = Position::new_unchecked(8, 8);
+        board.place_piece(Piece::new(PieceType::Pawn, Color::White), &pos);
+    }
+
+    #[test]
+    #[should_panic]
+    fn get_piece_with_invalid_position() {
+        let board = Board::default();
+        let pos = Position::new_unchecked(8, 8);
+        board.get_piece(&pos);
+    }
+}

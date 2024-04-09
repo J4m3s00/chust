@@ -28,8 +28,37 @@ impl Position {
 
 impl Display for Position {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let row_char = (b'a' + self.y) as char;
-        let col_char = (b'1' + self.x) as char;
+        let col_char = (b'a' + self.x) as char;
+        let row_char = (b'1' + self.y) as char;
         write!(f, "{}{}", col_char, row_char)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_position_new() {
+        let pos = Position::new(0, 0);
+        assert!(pos.is_some());
+        let pos = Position::new(8, 8);
+        assert!(pos.is_none());
+    }
+
+    #[test]
+    fn test_position_board_index() {
+        let pos = Position::new_unchecked(0, 0);
+        assert_eq!(pos.board_index(), 0);
+        let pos = Position::new_unchecked(7, 7);
+        assert_eq!(pos.board_index(), 63);
+    }
+
+    #[test]
+    fn test_position_display() {
+        let pos = Position::new_unchecked(0, 0);
+        assert_eq!(format!("{}", pos), "a1");
+        let pos = Position::new_unchecked(7, 7);
+        assert_eq!(format!("{}", pos), "h8");
     }
 }
