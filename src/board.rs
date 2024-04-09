@@ -33,6 +33,7 @@ impl Board {
             .as_ref()
     }
 
+    #[cfg_attr(coverage_nightly, coverage(off))]
     pub fn print_custom(&self, callback: impl Fn(Position) -> char) {
         println!("+---+---+---+---+---+---+---+---+");
         for i in 0..8 {
@@ -46,25 +47,31 @@ impl Board {
         println!("  a   b   c   d   e   f   g   h  ");
     }
 
+    #[cfg_attr(coverage_nightly, coverage(off))]
     pub fn print_pieces(&self) {
-        self.print_custom(|p| {
-            let Some(piece) = self.get_piece(&p) else {
-                return ' ';
-            };
-            match (piece.kind(), piece.color()) {
-                (crate::piece_type::PieceType::Pawn, crate::color::Color::White) => 'P',
-                (crate::piece_type::PieceType::Pawn, crate::color::Color::Black) => 'p',
-                (crate::piece_type::PieceType::Knight, crate::color::Color::White) => 'N',
-                (crate::piece_type::PieceType::Knight, crate::color::Color::Black) => 'n',
-                (crate::piece_type::PieceType::Bishop, crate::color::Color::White) => 'B',
-                (crate::piece_type::PieceType::Bishop, crate::color::Color::Black) => 'b',
-                (crate::piece_type::PieceType::Rook, crate::color::Color::White) => 'R',
-                (crate::piece_type::PieceType::Rook, crate::color::Color::Black) => 'r',
-                (crate::piece_type::PieceType::Queen, crate::color::Color::White) => 'Q',
-                (crate::piece_type::PieceType::Queen, crate::color::Color::Black) => 'q',
-                (crate::piece_type::PieceType::King, crate::color::Color::White) => 'K',
-                (crate::piece_type::PieceType::King, crate::color::Color::Black) => 'k',
-            }
-        });
+        self.print_custom(
+            // This is very ugly!!! But we take it for now.
+            // Could probably improve this with a trait for the printer of a board
+            #[cfg_attr(coverage_nightly, coverage(off))]
+            |p| {
+                let Some(piece) = self.get_piece(&p) else {
+                    return ' ';
+                };
+                match (piece.kind(), piece.color()) {
+                    (crate::piece_type::PieceType::Pawn, crate::color::Color::White) => 'P',
+                    (crate::piece_type::PieceType::Pawn, crate::color::Color::Black) => 'p',
+                    (crate::piece_type::PieceType::Knight, crate::color::Color::White) => 'N',
+                    (crate::piece_type::PieceType::Knight, crate::color::Color::Black) => 'n',
+                    (crate::piece_type::PieceType::Bishop, crate::color::Color::White) => 'B',
+                    (crate::piece_type::PieceType::Bishop, crate::color::Color::Black) => 'b',
+                    (crate::piece_type::PieceType::Rook, crate::color::Color::White) => 'R',
+                    (crate::piece_type::PieceType::Rook, crate::color::Color::Black) => 'r',
+                    (crate::piece_type::PieceType::Queen, crate::color::Color::White) => 'Q',
+                    (crate::piece_type::PieceType::Queen, crate::color::Color::Black) => 'q',
+                    (crate::piece_type::PieceType::King, crate::color::Color::White) => 'K',
+                    (crate::piece_type::PieceType::King, crate::color::Color::Black) => 'k',
+                }
+            },
+        );
     }
 }
