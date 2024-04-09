@@ -1,5 +1,6 @@
 use crate::{color::Color, piece_type::PieceType};
 
+#[derive(Clone, Copy)]
 pub struct Piece {
     kind: PieceType,
     color: Color,
