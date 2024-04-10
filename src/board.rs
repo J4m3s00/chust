@@ -1,4 +1,4 @@
-use crate::{moves::Move, piece::Piece, position::Position};
+use crate::{piece::Piece, position::Position};
 
 #[derive(Debug, PartialEq)]
 pub struct Board([Option<Piece>; 8 * 8]);
