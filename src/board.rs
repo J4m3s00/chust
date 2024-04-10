@@ -1,4 +1,4 @@
-use crate::{piece::Piece, position::Position};
+use crate::{moves::Move, piece::Piece, position::Position};
 
 #[derive(Debug, PartialEq)]
 pub struct Board([Option<Piece>; 8 * 8]);
@@ -10,6 +10,11 @@ impl Default for Board {
 }
 
 impl Board {
+    pub fn make_move(&mut self, mov: Move) {
+        let move_piece = self.remove_piece(&mov.from);
+        *self.piece_at_mut(&mov.to) = move_piece;
+    }
+
     pub fn place_piece(&mut self, piece: Piece, position: &Position) {
         let index = position.board_index();
         *self.0.get_mut(index).unwrap_or_else(|| {
@@ -31,6 +36,29 @@ impl Board {
                 )
             })
             .as_ref()
+    }
+
+    pub fn piece_at_mut(&mut self, position: &Position) -> &mut Option<Piece> {
+        let index = position.board_index();
+        self.0.get_mut(index).unwrap_or_else(|| {
+            panic!(
+                "Failed to get piece. The position is not in the correct range {:?}",
+                position
+            )
+        })
+    }
+
+    pub fn remove_piece(&mut self, position: &Position) -> Option<Piece> {
+        let index = position.board_index();
+        self.0
+            .get_mut(index)
+            .unwrap_or_else(|| {
+                panic!(
+                    "Failed to remove piece. The position is not in the correct range {:?}",
+                    position
+                )
+            })
+            .take()
     }
 
     #[cfg_attr(coverage_nightly, coverage(off))]
