@@ -1,11 +1,11 @@
-use std::fmt::Display;
+use std::{fmt::Display, str::FromStr};
 
 /// The position on the board
 /// Bottom left is (0, 0) or in chess terms 'A1'
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Position {
-    x: u8,
-    y: u8,
+    pub(crate) x: u8,
+    pub(crate) y: u8,
 }
 
 impl Position {
@@ -24,6 +24,23 @@ impl Position {
     pub fn board_index(&self) -> usize {
         self.y as usize * 8 + self.x as usize
     }
+
+    pub fn offset(&self, x: i8, y: i8) -> Option<Self> {
+        let new_x = self.x as i8 + x;
+        let new_y = self.y as i8 + y;
+        ((0..8).contains(&new_x) && (0..8).contains(&new_y)).then_some(Self {
+            x: new_x as u8,
+            y: new_y as u8,
+        })
+    }
+
+    pub fn file(&self) -> u8 {
+        self.x
+    }
+
+    pub fn rank(&self) -> u8 {
+        self.y
+    }
 }
 
 impl Display for Position {
@@ -31,6 +48,21 @@ impl Display for Position {
         let col_char = (b'a' + self.x) as char;
         let row_char = (b'1' + self.y) as char;
         write!(f, "{}{}", col_char, row_char)
+    }
+}
+
+impl FromStr for Position {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut chars = s.chars();
+        let col_char = chars.next().ok_or(anyhow::anyhow!("No column character"))?;
+        let row_char = chars.next().ok_or(anyhow::anyhow!("No row character"))?;
+
+        let x = col_char as u8 - b'a';
+        let y = row_char as u8 - b'1';
+
+        Self::new(x, y).ok_or(anyhow::anyhow!("Position out of bounds"))
     }
 }
 
@@ -42,6 +74,9 @@ mod tests {
     fn test_position_new() {
         let pos = Position::new(0, 0);
         assert!(pos.is_some());
+        let pos = pos.unwrap();
+        assert_eq!(pos.rank(), 0);
+        assert_eq!(pos.file(), 0);
         let pos = Position::new(8, 8);
         assert!(pos.is_none());
     }
@@ -60,5 +95,21 @@ mod tests {
         assert_eq!(format!("{}", pos), "a1");
         let pos = Position::new_unchecked(7, 7);
         assert_eq!(format!("{}", pos), "h8");
+    }
+
+    #[test]
+    fn test_position_from_str() {
+        let pos = Position::from_str("a1");
+        assert!(pos.is_ok());
+        let pos = pos.unwrap();
+        assert_eq!(pos.rank(), 0);
+        assert_eq!(pos.file(), 0);
+        let pos = Position::from_str("h8");
+        assert!(pos.is_ok());
+        let pos = pos.unwrap();
+        assert_eq!(pos.rank(), 7);
+        assert_eq!(pos.file(), 7);
+        let pos = Position::from_str("i9");
+        assert!(pos.is_err());
     }
 }
