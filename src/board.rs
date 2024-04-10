@@ -10,9 +10,9 @@ impl Default for Board {
 }
 
 impl Board {
-    pub fn make_move(&mut self, mov: Move) {
-        let move_piece = self.remove_piece(&mov.from);
-        *self.piece_at_mut(&mov.to) = move_piece;
+    pub fn make_move(&mut self, from: &Position, to: &Position) {
+        let move_piece = self.remove_piece(from);
+        *self.piece_at_mut(to) = move_piece;
     }
 
     pub fn place_piece(&mut self, piece: Piece, position: &Position) {

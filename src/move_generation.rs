@@ -1,4 +1,10 @@
-use crate::{color::Color, game::Game, moves::Move, piece_type::PieceType, position::Position};
+use crate::{
+    color::Color,
+    game::Game,
+    moves::{Move, MoveType},
+    piece_type::PieceType,
+    position::Position,
+};
 
 pub struct MoveGenerator<'a> {
     game: &'a Game,
@@ -36,7 +42,7 @@ impl MoveGenerator<'_> {
         // Single step forward
         if let Some(new_pos) = position.offset(0, direction) {
             if board.piece_at(&new_pos).is_none() {
-                result.push(Move::new(*position, new_pos));
+                result.push(Move::new(*position, new_pos, MoveType::Quiet));
             }
         }
 
@@ -44,7 +50,11 @@ impl MoveGenerator<'_> {
         if position.rank() == color.pawn_rank() {
             if let Some(new_pos) = position.offset(0, 2 * direction) {
                 if board.piece_at(&new_pos).is_none() {
-                    result.push(Move::new(*position, new_pos));
+                    result.push(Move::new(
+                        *position,
+                        new_pos,
+                        MoveType::EnPassant(position.offset(0, direction).unwrap()),
+                    ));
                 }
             }
         }
@@ -54,7 +64,11 @@ impl MoveGenerator<'_> {
             if let Some(new_pos) = position.offset(dx, direction) {
                 if let Some(piece) = board.piece_at(&new_pos) {
                     if piece.color() != color {
-                        result.push(Move::new(*position, new_pos));
+                        result.push(Move::new(
+                            *position,
+                            new_pos,
+                            MoveType::Capture(piece.kind()),
+                        ));
                     }
                 }
             }
@@ -72,10 +86,14 @@ impl MoveGenerator<'_> {
                     if let Some(new_pos) = position.offset(dx, dy) {
                         if let Some(piece) = board.piece_at(&new_pos) {
                             if piece.color() != color {
-                                result.push(Move::new(*position, new_pos));
+                                result.push(Move::new(
+                                    *position,
+                                    new_pos,
+                                    MoveType::Capture(piece.kind()),
+                                ));
                             }
                         } else {
-                            result.push(Move::new(*position, new_pos));
+                            result.push(Move::new(*position, new_pos, MoveType::Quiet));
                         }
                     }
                 }
@@ -93,11 +111,11 @@ impl MoveGenerator<'_> {
                 while let Some(pos) = new_pos {
                     if let Some(piece) = board.piece_at(&pos) {
                         if piece.color() != color {
-                            result.push(Move::new(*position, pos));
+                            result.push(Move::new(*position, pos, MoveType::Capture(piece.kind())));
                         }
                         break;
                     }
-                    result.push(Move::new(*position, pos));
+                    result.push(Move::new(*position, pos, MoveType::Quiet));
                     new_pos = pos.offset(dx, dy);
                 }
             }
@@ -113,11 +131,11 @@ impl MoveGenerator<'_> {
             while let Some(pos) = new_pos {
                 if let Some(piece) = board.piece_at(&pos) {
                     if piece.color() != color {
-                        result.push(Move::new(*position, pos));
+                        result.push(Move::new(*position, pos, MoveType::Capture(piece.kind())));
                     }
                     break;
                 }
-                result.push(Move::new(*position, pos));
+                result.push(Move::new(*position, pos, MoveType::Quiet));
                 new_pos = pos.offset(dx, 0);
             }
         }
@@ -126,11 +144,11 @@ impl MoveGenerator<'_> {
             while let Some(pos) = new_pos {
                 if let Some(piece) = board.piece_at(&pos) {
                     if piece.color() != color {
-                        result.push(Move::new(*position, pos));
+                        result.push(Move::new(*position, pos, MoveType::Capture(piece.kind())));
                     }
                     break;
                 }
-                result.push(Move::new(*position, pos));
+                result.push(Move::new(*position, pos, MoveType::Quiet));
                 new_pos = pos.offset(0, dy);
             }
         }
@@ -153,15 +171,65 @@ impl MoveGenerator<'_> {
                     if let Some(new_pos) = position.offset(dx, dy) {
                         if let Some(piece) = board.piece_at(&new_pos) {
                             if piece.color() != color {
-                                result.push(Move::new(*position, new_pos));
+                                result.push(Move::new(
+                                    *position,
+                                    new_pos,
+                                    MoveType::Capture(piece.kind()),
+                                ));
                             }
                         } else {
-                            result.push(Move::new(*position, new_pos));
+                            result.push(Move::new(*position, new_pos, MoveType::Quiet));
                         }
                     }
                 }
             }
         }
+
+        // Castle moves
+        let root_rank = color.root_rank();
+        if position.rank() == root_rank && position.file() == 4 {
+            // Check if the fields next to the kind are free
+            if board
+                .piece_at(&Position::new_unchecked(5, root_rank))
+                .is_none()
+                && board
+                    .piece_at(&Position::new_unchecked(6, root_rank))
+                    .is_none()
+            {
+                // Check if the rook is on the correct field
+                if let Some(piece) = board.piece_at(&Position::new_unchecked(7, root_rank)) {
+                    if piece.kind() == PieceType::Rook && piece.color() == color {
+                        result.push(Move::new(
+                            *position,
+                            Position::new_unchecked(6, root_rank),
+                            MoveType::Castle,
+                        ));
+                    }
+                }
+            }
+            if board
+                .piece_at(&Position::new_unchecked(1, root_rank))
+                .is_none()
+                && board
+                    .piece_at(&Position::new_unchecked(2, root_rank))
+                    .is_none()
+                && board
+                    .piece_at(&Position::new_unchecked(3, root_rank))
+                    .is_none()
+            {
+                // Check if the rook is on the correct field
+                if let Some(piece) = board.piece_at(&Position::new_unchecked(0, root_rank)) {
+                    if piece.kind() == PieceType::Rook && piece.color() == color {
+                        result.push(Move::new(
+                            *position,
+                            Position::new_unchecked(2, root_rank),
+                            MoveType::Castle,
+                        ));
+                    }
+                }
+            }
+        }
+
         result
     }
 }

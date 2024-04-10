@@ -4,6 +4,8 @@ use chust::{fen::Fen, game::Game, move_generation::MoveGenerator, position::Posi
 fn main() -> anyhow::Result<()> {
     let mut game = Game::default();
 
+    game.board().print_pieces();
+
     loop {
         let mut input = String::new();
         let _ = std::io::stdin().read_line(&mut input);
@@ -36,6 +38,31 @@ fn main() -> anyhow::Result<()> {
                             ' '
                         }
                     });
+                }
+                "move" | "m" => {
+                    let from = rest
+                        .get(0..2)
+                        .context("Please provide a move in the format 'e2e4'")?
+                        .parse::<Position>()
+                        .context("No valid first position given!")?;
+                    let to = rest
+                        .get(2..4)
+                        .context("Please provide a move in the format 'e2e4'")?
+                        .parse::<Position>()
+                        .context("No valid second position given!")?;
+
+                    let generator = MoveGenerator::new(&game);
+                    let legal_moves = generator.pseudo_legal_moves(&from);
+                    let mov = legal_moves
+                        .into_iter()
+                        .find(|m| m.to == to)
+                        .context("Could not find valid move")?;
+                    game.make_move(mov);
+                    game.board().print_pieces();
+                }
+                "um" => {
+                    game.unmake_move();
+                    game.board().print_pieces();
                 }
                 "print" => {
                     game.board().print_pieces();

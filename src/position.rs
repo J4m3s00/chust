@@ -4,8 +4,8 @@ use std::{fmt::Display, str::FromStr};
 /// Bottom left is (0, 0) or in chess terms 'A1'
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Position {
-    x: u8,
-    y: u8,
+    pub(crate) x: u8,
+    pub(crate) y: u8,
 }
 
 impl Position {
