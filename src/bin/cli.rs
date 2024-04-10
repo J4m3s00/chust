@@ -1,5 +1,7 @@
 use anyhow::Context;
-use chust::{fen::Fen, game::Game, move_generation::MoveGenerator, position::Position};
+use chust::{
+    fen::Fen, game::Game, move_generation::MoveGenerator, piece::Piece, position::Position,
+};
 
 fn main() -> anyhow::Result<()> {
     let mut game = Game::default();
@@ -31,7 +33,7 @@ fn main() -> anyhow::Result<()> {
                     let generator = MoveGenerator::new(&game);
                     let legal_moves = generator.pseudo_legal_moves(&position);
 
-                    game.board().print_custom(|p| {
+                    game.board().print_custom(|_: Option<Piece>, p: Position| {
                         if legal_moves.iter().any(|m| m.to == p) {
                             'X'
                         } else {
