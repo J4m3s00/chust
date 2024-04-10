@@ -5,7 +5,7 @@ pub enum Color {
 }
 
 impl Color {
-    pub fn inverse(&self) -> Self {
+    pub fn opposite(&self) -> Self {
         match self {
             Self::White => Self::Black,
             Self::Black => Self::White,
@@ -39,11 +39,11 @@ mod tests {
     use super::Color;
 
     #[test]
-    fn inverse() {
+    fn opposite() {
         let white = Color::White;
-        assert!(white.inverse() == Color::Black);
+        assert!(white.opposite() == Color::Black);
         let black = Color::Black;
-        assert!(black.inverse() == Color::White);
+        assert!(black.opposite() == Color::White);
     }
 
     #[test]
