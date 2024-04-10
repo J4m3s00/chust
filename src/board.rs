@@ -66,13 +66,16 @@ impl Board {
     }
 
     /// # Example
-    /// ````
+    /// ```
+    /// use crate::chust::{board::Board, print_board::DefaultBoardPrinter, piece::Piece, position::Position};
+    /// let board = Board::default();
+    ///
     /// // For the default builder
-    /// board.print_custom(print_board::DefaultBoardPrinter);
+    /// board.print_custom(DefaultBoardPrinter);
     ///
     /// // With closure
     /// board.print_custom(|piece: Option<Piece>, p: Position| {
-    ///     piece.map(|p| 'X').unwrap_or(' ');
+    ///     piece.map(|p| 'X').unwrap_or(' ')
     /// });
     /// ```
     #[cfg_attr(coverage_nightly, coverage(off))]
