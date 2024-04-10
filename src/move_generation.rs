@@ -1,24 +1,35 @@
-use crate::{board::Board, color::Color, moves::Move, piece_type::PieceType, position::Position};
+use crate::{color::Color, game::Game, moves::Move, piece_type::PieceType, position::Position};
 
-pub struct MoveGenerator {}
+pub struct MoveGenerator<'a> {
+    game: &'a Game,
+}
 
-impl MoveGenerator {
-    pub fn pseudo_legal_moves(board: &Board, position: &Position) -> Vec<Move> {
+impl<'a> MoveGenerator<'a> {
+    pub fn new(game: &'a Game) -> Self {
+        Self { game }
+    }
+}
+
+// Pseudo legal moves are moves that are legal in terms of the rules of chess, but may not be legal
+impl MoveGenerator<'_> {
+    pub fn pseudo_legal_moves(&self, position: &Position) -> Vec<Move> {
+        let board = self.game.board();
         let Some(piece) = board.piece_at(position) else {
             return Vec::new();
         };
 
         match piece.kind() {
-            PieceType::Pawn => Self::pawn_pseudo_legal_moves(board, position, piece.color()),
-            PieceType::Knight => Self::knight_pseudo_legal_moves(board, position, piece.color()),
-            PieceType::Bishop => Self::bishop_pseudo_legal_moves(board, position, piece.color()),
-            PieceType::Rook => Self::rook_pseudo_legal_moves(board, position, piece.color()),
-            PieceType::Queen => Self::queen_pseudo_legal_moves(board, position, piece.color()),
-            PieceType::King => Self::king_pseudo_legal_moves(board, position, piece.color()),
+            PieceType::Pawn => self.pawn_pseudo_legal_moves(position, piece.color()),
+            PieceType::Knight => self.knight_pseudo_legal_moves(position, piece.color()),
+            PieceType::Bishop => self.bishop_pseudo_legal_moves(position, piece.color()),
+            PieceType::Rook => self.rook_pseudo_legal_moves(position, piece.color()),
+            PieceType::Queen => self.queen_pseudo_legal_moves(position, piece.color()),
+            PieceType::King => self.king_pseudo_legal_moves(position, piece.color()),
         }
     }
 
-    fn pawn_pseudo_legal_moves(board: &Board, position: &Position, color: Color) -> Vec<Move> {
+    fn pawn_pseudo_legal_moves(&self, position: &Position, color: Color) -> Vec<Move> {
+        let board = self.game.board();
         let mut result = Vec::new();
         let direction = color.board_direction();
 
@@ -52,7 +63,8 @@ impl MoveGenerator {
         result
     }
 
-    fn knight_pseudo_legal_moves(board: &Board, position: &Position, color: Color) -> Vec<Move> {
+    fn knight_pseudo_legal_moves(&self, position: &Position, color: Color) -> Vec<Move> {
+        let board = self.game.board();
         let mut result = Vec::new();
         for &dx in &[-2i8, -1, 1, 2] {
             for &dy in &[-2i8, -1, 1, 2] {
@@ -72,7 +84,8 @@ impl MoveGenerator {
         result
     }
 
-    fn bishop_pseudo_legal_moves(board: &Board, position: &Position, color: Color) -> Vec<Move> {
+    fn bishop_pseudo_legal_moves(&self, position: &Position, color: Color) -> Vec<Move> {
+        let board = self.game.board();
         let mut result = Vec::new();
         for &dx in &[-1, 1] {
             for &dy in &[-1, 1] {
@@ -92,7 +105,8 @@ impl MoveGenerator {
         result
     }
 
-    fn rook_pseudo_legal_moves(board: &Board, position: &Position, color: Color) -> Vec<Move> {
+    fn rook_pseudo_legal_moves(&self, position: &Position, color: Color) -> Vec<Move> {
+        let board = self.game.board();
         let mut result = Vec::new();
         for &dx in &[-1, 1] {
             let mut new_pos = position.offset(dx, 0);
@@ -123,14 +137,15 @@ impl MoveGenerator {
         result
     }
 
-    fn queen_pseudo_legal_moves(board: &Board, position: &Position, color: Color) -> Vec<Move> {
+    fn queen_pseudo_legal_moves(&self, position: &Position, color: Color) -> Vec<Move> {
         let mut result = Vec::new();
-        result.extend(Self::bishop_pseudo_legal_moves(board, position, color));
-        result.extend(Self::rook_pseudo_legal_moves(board, position, color));
+        result.extend(self.bishop_pseudo_legal_moves(position, color));
+        result.extend(self.rook_pseudo_legal_moves(position, color));
         result
     }
 
-    fn king_pseudo_legal_moves(board: &Board, position: &Position, color: Color) -> Vec<Move> {
+    fn king_pseudo_legal_moves(&self, position: &Position, color: Color) -> Vec<Move> {
+        let board = self.game.board();
         let mut result = Vec::new();
         for &dx in &[-1, 0, 1] {
             for &dy in &[-1, 0, 1] {
@@ -154,55 +169,68 @@ impl MoveGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::board::Board;
 
     #[test]
     fn test_pawn_pseudo_legal_moves() {
-        let board = Board::default();
+        let game = Game::new(Board::default(), Color::White);
+        let move_generator = MoveGenerator::new(&game);
+
         let white_pawn = Position::new_unchecked(3, 1);
         let black_pawn = Position::new_unchecked(3, 6);
-        let white_moves = MoveGenerator::pawn_pseudo_legal_moves(&board, &white_pawn, Color::White);
-        let black_moves = MoveGenerator::pawn_pseudo_legal_moves(&board, &black_pawn, Color::Black);
+        let white_moves = move_generator.pawn_pseudo_legal_moves(&white_pawn, Color::White);
+        let black_moves = move_generator.pawn_pseudo_legal_moves(&black_pawn, Color::Black);
         assert_eq!(white_moves.len(), 2);
         assert_eq!(black_moves.len(), 2);
     }
 
     #[test]
     fn test_knight_pseudo_legal_moves() {
-        let board = Board::default();
+        let game = Game::new(Board::default(), Color::White);
+        let move_generator = MoveGenerator::new(&game);
+
         let knight = Position::new_unchecked(3, 3);
-        let moves = MoveGenerator::knight_pseudo_legal_moves(&board, &knight, Color::White);
+        let moves = move_generator.knight_pseudo_legal_moves(&knight, Color::White);
         assert_eq!(moves.len(), 8);
     }
 
     #[test]
     fn test_bishop_pseudo_legal_moves() {
-        let board = Board::default();
+        let game = Game::new(Board::default(), Color::White);
+        let move_generator = MoveGenerator::new(&game);
+
         let bishop = Position::new_unchecked(3, 3);
-        let moves = MoveGenerator::bishop_pseudo_legal_moves(&board, &bishop, Color::White);
+        let moves = move_generator.bishop_pseudo_legal_moves(&bishop, Color::White);
         assert_eq!(moves.len(), 13);
     }
 
     #[test]
     fn test_rook_pseudo_legal_moves() {
-        let board = Board::default();
+        let game = Game::new(Board::default(), Color::White);
+        let move_generator = MoveGenerator::new(&game);
+
         let rook = Position::new_unchecked(3, 3);
-        let moves = MoveGenerator::rook_pseudo_legal_moves(&board, &rook, Color::White);
+        let moves = move_generator.rook_pseudo_legal_moves(&rook, Color::White);
         assert_eq!(moves.len(), 14);
     }
 
     #[test]
     fn test_queen_pseudo_legal_moves() {
-        let board = Board::default();
+        let game = Game::new(Board::default(), Color::White);
+        let move_generator = MoveGenerator::new(&game);
+
         let queen = Position::new_unchecked(3, 3);
-        let moves = MoveGenerator::queen_pseudo_legal_moves(&board, &queen, Color::White);
+        let moves = move_generator.queen_pseudo_legal_moves(&queen, Color::White);
         assert_eq!(moves.len(), 27);
     }
 
     #[test]
     fn test_king_pseudo_legal_moves() {
-        let board = Board::default();
+        let game = Game::new(Board::default(), Color::White);
+        let move_generator = MoveGenerator::new(&game);
+
         let king = Position::new_unchecked(3, 3);
-        let moves = MoveGenerator::king_pseudo_legal_moves(&board, &king, Color::White);
+        let moves = move_generator.king_pseudo_legal_moves(&king, Color::White);
         assert_eq!(moves.len(), 8);
     }
 }
