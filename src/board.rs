@@ -1,4 +1,8 @@
-use crate::{piece::Piece, position::Position};
+use crate::{
+    piece::Piece,
+    position::Position,
+    print_board::{BoardPrinter, DefaultBoardPrinter},
+};
 
 #[derive(Debug, PartialEq)]
 pub struct Board([Option<Piece>; 8 * 8]);
@@ -61,13 +65,24 @@ impl Board {
             .take()
     }
 
+    /// # Example
+    /// ````
+    /// // For the default builder
+    /// board.print_custom(print_board::DefaultBoardPrinter);
+    ///
+    /// // With closure
+    /// board.print_custom(|piece: Option<Piece>, p: Position| {
+    ///     piece.map(|p| 'X').unwrap_or(' ');
+    /// });
+    /// ```
     #[cfg_attr(coverage_nightly, coverage(off))]
-    pub fn print_custom(&self, callback: impl Fn(Position) -> char) {
+    pub fn print_custom(&self, printer: impl BoardPrinter) {
         println!("+---+---+---+---+---+---+---+---+");
         for i in 0..8 {
             print!("|");
             for j in 0..8 {
-                print!(" {} |", callback(Position::new_unchecked(j, 7 - i)));
+                let pos = Position::new_unchecked(j, 7 - i);
+                print!(" {} |", printer.get_char(self.piece_at(&pos).cloned(), pos));
             }
             println!(" {}", 8 - i);
             println!("+---+---+---+---+---+---+---+---+");
@@ -77,30 +92,7 @@ impl Board {
 
     #[cfg_attr(coverage_nightly, coverage(off))]
     pub fn print_pieces(&self) {
-        self.print_custom(
-            // This is very ugly!!! But we take it for now.
-            // Could probably improve this with a trait for the printer of a board
-            #[cfg_attr(coverage_nightly, coverage(off))]
-            |p| {
-                let Some(piece) = self.piece_at(&p) else {
-                    return ' ';
-                };
-                match (piece.kind(), piece.color()) {
-                    (crate::piece_type::PieceType::Pawn, crate::color::Color::White) => 'P',
-                    (crate::piece_type::PieceType::Pawn, crate::color::Color::Black) => 'p',
-                    (crate::piece_type::PieceType::Knight, crate::color::Color::White) => 'N',
-                    (crate::piece_type::PieceType::Knight, crate::color::Color::Black) => 'n',
-                    (crate::piece_type::PieceType::Bishop, crate::color::Color::White) => 'B',
-                    (crate::piece_type::PieceType::Bishop, crate::color::Color::Black) => 'b',
-                    (crate::piece_type::PieceType::Rook, crate::color::Color::White) => 'R',
-                    (crate::piece_type::PieceType::Rook, crate::color::Color::Black) => 'r',
-                    (crate::piece_type::PieceType::Queen, crate::color::Color::White) => 'Q',
-                    (crate::piece_type::PieceType::Queen, crate::color::Color::Black) => 'q',
-                    (crate::piece_type::PieceType::King, crate::color::Color::White) => 'K',
-                    (crate::piece_type::PieceType::King, crate::color::Color::Black) => 'k',
-                }
-            },
-        );
+        self.print_custom(DefaultBoardPrinter);
     }
 }
 
