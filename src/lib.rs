@@ -1,5 +1,6 @@
 #![cfg_attr(coverage_nightly, feature(coverage_attribute))]
 
+pub mod bitboards;
 pub mod board;
 pub mod color;
 pub mod fen;

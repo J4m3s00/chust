@@ -1,23 +1,23 @@
-use crate::{piece::Piece, position::Position};
+use crate::{game::Game, piece::Piece, position::Position};
 
 pub trait BoardPrinter {
-    fn get_char(&self, piece: Option<Piece>, position: Position) -> char;
+    fn get_char(&self, position: Position, game: &Game) -> char;
 }
 
 impl<F> BoardPrinter for F
 where
-    F: Fn(Option<Piece>, Position) -> char,
+    F: Fn(Position, &Game) -> char,
 {
-    fn get_char(&self, piece: Option<Piece>, position: Position) -> char {
-        self(piece, position)
+    fn get_char(&self, position: Position, game: &Game) -> char {
+        self(position, game)
     }
 }
 
 pub struct DefaultBoardPrinter;
 
 impl BoardPrinter for DefaultBoardPrinter {
-    fn get_char(&self, piece: Option<Piece>, _: Position) -> char {
-        let Some(piece) = piece else {
+    fn get_char(&self, position: Position, game: &Game) -> char {
+        let Some(piece) = game.board().piece_at(&position) else {
             return ' ';
         };
         match (piece.kind(), piece.color()) {

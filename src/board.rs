@@ -65,37 +65,11 @@ impl Board {
             .take()
     }
 
-    /// # Example
-    /// ```
-    /// use crate::chust::{board::Board, print_board::DefaultBoardPrinter, piece::Piece, position::Position};
-    /// let board = Board::default();
-    ///
-    /// // For the default builder
-    /// board.print_custom(DefaultBoardPrinter);
-    ///
-    /// // With closure
-    /// board.print_custom(|piece: Option<Piece>, p: Position| {
-    ///     piece.map(|p| 'X').unwrap_or(' ')
-    /// });
-    /// ```
-    #[cfg_attr(coverage_nightly, coverage(off))]
-    pub fn print_custom(&self, printer: impl BoardPrinter) {
-        println!("+---+---+---+---+---+---+---+---+");
-        for i in 0..8 {
-            print!("|");
-            for j in 0..8 {
-                let pos = Position::new_unchecked(j, 7 - i);
-                print!(" {} |", printer.get_char(self.piece_at(&pos).cloned(), pos));
-            }
-            println!(" {}", 8 - i);
-            println!("+---+---+---+---+---+---+---+---+");
-        }
-        println!("  a   b   c   d   e   f   g   h  ");
-    }
-
-    #[cfg_attr(coverage_nightly, coverage(off))]
-    pub fn print_pieces(&self) {
-        self.print_custom(DefaultBoardPrinter);
+    pub fn iter(&self) -> impl Iterator<Item = (Position, Option<&Piece>)> {
+        self.0.iter().enumerate().map(|(i, piece)| {
+            let position = Position::from_board_index(i).unwrap();
+            (position, piece.as_ref())
+        })
     }
 }
 

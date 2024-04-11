@@ -25,6 +25,10 @@ impl Position {
         self.y as usize * 8 + self.x as usize
     }
 
+    pub fn from_board_index(index: usize) -> Option<Self> {
+        Self::new((index % 8) as u8, (index / 8) as u8)
+    }
+
     pub fn offset(&self, x: i8, y: i8) -> Option<Self> {
         let new_x = self.x as i8 + x;
         let new_y = self.y as i8 + y;
