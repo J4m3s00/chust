@@ -9,7 +9,7 @@ use crate::{
 pub struct Bitboard(u64);
 
 impl Bitboard {
-    pub fn iter<'a>(&'a self) -> impl Iterator<Item = Position> + 'a {
+    pub fn iter(&self) -> impl Iterator<Item = Position> + '_ {
         (0..64).filter_map(|index| {
             (self.0 & (1 << index) != 0).then_some(Position::from_board_index_unchecked(index))
         })
