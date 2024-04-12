@@ -23,8 +23,8 @@ impl GameBitBoards {
 
         for (position, piece) in game.board().iter() {
             let bitboard = 1 << position.board_index();
-            match piece {
-                Some(piece) => match (piece.kind(), piece.color()) {
+            if let Some(piece) = piece {
+                match (piece.kind(), piece.color()) {
                     (PieceType::Pawn, Color::White) => this.white_pawns |= bitboard,
                     (PieceType::Knight, Color::White) => this.white_knights |= bitboard,
                     (PieceType::Bishop, Color::White) => this.white_bishops |= bitboard,
@@ -37,8 +37,7 @@ impl GameBitBoards {
                     (PieceType::Rook, Color::Black) => this.black_rooks |= bitboard,
                     (PieceType::Queen, Color::Black) => this.black_queens |= bitboard,
                     (PieceType::King, Color::Black) => this.black_king |= bitboard,
-                },
-                None => {}
+                }
             }
             this.all_pieces |= bitboard;
         }
@@ -98,6 +97,10 @@ impl BoardPrinter for BitBoardPrinter {
         };
 
         let is_occupied = bit_value & (1 << position.board_index()) != 0;
-        is_occupied.then_some('X').unwrap_or(' ')
+        if is_occupied {
+            'X'
+        } else {
+            ' '
+        }
     }
 }
