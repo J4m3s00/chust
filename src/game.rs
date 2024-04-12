@@ -93,6 +93,8 @@ impl Game {
         }
         self.move_stack.push(mov);
         self.current_turn = self.current_turn.opposite();
+
+        self.bitboards = GameBitBoards::new(self);
     }
 
     pub fn unmake_move(&mut self) {
@@ -159,6 +161,8 @@ impl Game {
             }
         }
         self.current_turn = self.current_turn.opposite();
+
+        self.bitboards = GameBitBoards::new(self);
     }
 
     pub fn board(&self) -> &Board {
