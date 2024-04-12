@@ -2,7 +2,7 @@ use std::{fmt::Display, str::FromStr};
 
 /// The position on the board
 /// Bottom left is (0, 0) or in chess terms 'A1'
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Position {
     pub(crate) x: u8,
     pub(crate) y: u8,
@@ -27,6 +27,13 @@ impl Position {
 
     pub fn from_board_index(index: usize) -> Option<Self> {
         Self::new((index % 8) as u8, (index / 8) as u8)
+    }
+
+    /// Creates a new position without bounds checking
+    /// # WARN
+    /// Must check, that index < 64
+    pub fn from_board_index_unchecked(index: usize) -> Self {
+        Self::new_unchecked((index % 8) as u8, (index / 8) as u8)
     }
 
     pub fn offset(&self, x: i8, y: i8) -> Option<Self> {

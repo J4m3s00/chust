@@ -18,6 +18,27 @@ impl<'a> MoveGenerator<'a> {
 
 // Pseudo legal moves are moves that are legal in terms of the rules of chess, but may not be legal
 impl MoveGenerator<'_> {
+    /// Returns all possible attacking moves for a piece at the given position.
+    /// This includes moves that are not legal due to the king being in check.
+    /// This is useful for generating moves for the king, as it needs to know all possible
+    pub fn possible_attacking_moves(&self, position: &Position) -> Vec<Move> {
+        let board = self.game.board();
+        let Some(piece) = board.piece_at(position) else {
+            return Vec::new();
+        };
+
+        match piece.kind() {
+            PieceType::Pawn => self.pawn_possible_attacking_moves(position, piece.color()),
+            PieceType::Knight => self.knight_pseudo_legal_moves(position, piece.color()),
+            PieceType::Bishop => self.bishop_pseudo_legal_moves(position, piece.color()),
+            PieceType::Rook => self.rook_pseudo_legal_moves(position, piece.color()),
+            PieceType::Queen => self.queen_pseudo_legal_moves(position, piece.color()),
+            PieceType::King => self.king_pseudo_legal_moves(position, piece.color()),
+        }
+    }
+
+    /// Returns all pseudo legal moves for a piece at the given position.
+    /// This includes moves that are not legal due to the king being in check.
     pub fn pseudo_legal_moves(&self, position: &Position) -> Vec<Move> {
         let board = self.game.board();
         let Some(piece) = board.piece_at(position) else {

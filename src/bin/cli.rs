@@ -25,6 +25,7 @@ fn main() -> anyhow::Result<()> {
             match cmd {
                 "fen" => {
                     game = Fen::parse_game(rest).context("Invalid fen string!")?;
+                    game.print_pieces();
                 }
                 "show" => {
                     let position = rest
