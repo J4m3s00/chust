@@ -1,4 +1,4 @@
-use crate::{game::Game, piece::Piece, position::Position};
+use crate::{game::Game, position::Position};
 
 pub trait BoardPrinter {
     fn get_char(&self, position: Position, game: &Game) -> char;

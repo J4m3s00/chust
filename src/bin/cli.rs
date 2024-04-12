@@ -1,6 +1,6 @@
 use anyhow::Context;
 use chust::{
-    bitboards::BitBoardPrinter, fen::Fen, game::Game, move_generation::MoveGenerator, piece::Piece,
+    bitboards::BitBoardPrinter, fen::Fen, game::Game, move_generation::MoveGenerator,
     position::Position,
 };
 

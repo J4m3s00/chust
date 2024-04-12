@@ -175,14 +175,15 @@ impl Game {
 
     /// # Example
     /// ```
-    /// use crate::chust::{board::Board, print_board::DefaultBoardPrinter, piece::Piece, position::Position};
-    /// let board = Board::default();
+    /// use crate::chust::{game::Game, print_board::DefaultBoardPrinter, piece::Piece, position::Position};
+    /// let game = Game::default();
     ///
     /// // For the default builder
-    /// board.print_custom(DefaultBoardPrinter);
+    /// game.print_custom(DefaultBoardPrinter);
     ///
     /// // With closure
-    /// board.print_custom(|piece: Option<Piece>, p: Position| {
+    /// game.print_custom(|p: Position, game: &Game| {
+    ///     let piece = game.board().piece_at(&p);
     ///     piece.map(|p| 'X').unwrap_or(' ')
     /// });
     /// ```
