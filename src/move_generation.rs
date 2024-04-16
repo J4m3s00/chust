@@ -16,6 +16,40 @@ impl<'a> MoveGenerator<'a> {
     }
 }
 
+// Legal moves
+impl MoveGenerator<'_> {
+    /// Returns all legal moves for a piece at the given position.
+    pub fn legal_moves(&self, position: &Position) -> Vec<Move> {
+        self.pseudo_legal_moves(position)
+            .into_iter()
+            .filter(|mov| self.is_move_legal(mov))
+            .collect()
+    }
+
+    fn is_move_legal(&self, mov: &Move) -> bool {
+        let board = self.game.board();
+        let Some(piece_to_move) = board.piece_at(&mov.from) else {
+            return false;
+        };
+
+        let to_move_color = piece_to_move.color();
+
+        if let PieceType::King = piece_to_move.kind() {
+            // Filter out when the king moves into check
+            if self
+                .game
+                .bitboards()
+                .attacks(to_move_color.opposite())
+                .contains(&mov.to)
+            {
+                return false;
+            }
+        }
+
+        true
+    }
+}
+
 // Pseudo legal moves are moves that are legal in terms of the rules of chess, but may not be legal
 impl MoveGenerator<'_> {
     /// Returns all possible attacking moves for a piece at the given position.
@@ -64,18 +98,18 @@ impl MoveGenerator<'_> {
         if let Some(new_pos) = position.offset(0, direction) {
             if board.piece_at(&new_pos).is_none() {
                 result.push(Move::new(*position, new_pos, MoveType::Quiet));
-            }
-        }
 
-        // Double step forward
-        if position.rank() == color.pawn_rank() {
-            if let Some(new_pos) = position.offset(0, 2 * direction) {
-                if board.piece_at(&new_pos).is_none() {
-                    result.push(Move::new(
-                        *position,
-                        new_pos,
-                        MoveType::EnPassant(position.offset(0, direction).unwrap()),
-                    ));
+                // Double step forward
+                if position.rank() == color.pawn_rank() {
+                    if let Some(new_pos) = position.offset(0, 2 * direction) {
+                        if board.piece_at(&new_pos).is_none() {
+                            result.push(Move::new(
+                                *position,
+                                new_pos,
+                                MoveType::EnPassant(position.offset(0, direction).unwrap()),
+                            ));
+                        }
+                    }
                 }
             }
         }
@@ -84,12 +118,11 @@ impl MoveGenerator<'_> {
         result.extend(
             self.pawn_possible_attacking_moves(position, color)
                 .into_iter()
-                .filter(|mov| {
-                    if let Some(piece) = board.piece_at(&mov.to) {
-                        piece.color() != color
-                    } else {
-                        false
-                    }
+                .filter_map(|mov| {
+                    board
+                        .piece_at(&mov.to)
+                        .filter(|piece| piece.color() != color)
+                        .map(|piece| Move::new(*position, mov.to, MoveType::Capture(piece.kind())))
                 }),
         );
 

@@ -7,6 +7,58 @@ use crate::{
 pub struct Fen;
 
 impl Fen {
+    pub fn from_game(game: &Game) -> String {
+        let mut fen = String::new();
+
+        for row in (0..8).rev() {
+            let mut empty = 0;
+            for col in 0..8 {
+                let position = Position::new(col, row).unwrap();
+                let piece = game.board().piece_at(&position);
+                if let Some(piece) = piece {
+                    if empty > 0 {
+                        fen.push_str(&empty.to_string());
+                        empty = 0;
+                    }
+                    fen.push(piece.get_print_char());
+                } else {
+                    empty += 1;
+                }
+            }
+            if empty > 0 {
+                fen.push_str(&empty.to_string());
+            }
+            if row > 0 {
+                fen.push('/');
+            }
+        }
+
+        fen.push(' ');
+
+        fen.push_str(&match game.current_turn() {
+            Color::White => "w",
+            Color::Black => "b",
+        });
+
+        fen.push(' ');
+
+        fen.push_str("KQkq");
+
+        fen.push(' ');
+
+        fen.push_str("-");
+
+        fen.push(' ');
+
+        fen.push_str("0");
+
+        fen.push(' ');
+
+        fen.push_str("1");
+
+        fen
+    }
+
     pub fn parse_game(fen: &str) -> anyhow::Result<Game> {
         let mut part_iter = fen.split_whitespace();
 

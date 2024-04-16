@@ -44,14 +44,23 @@ impl Game {
         res
     }
 
-    pub fn make_move(&mut self, mov: Move) {
+    /// Checks if the current moving player is in check
+    /// # Returns
+    /// `true` if the current moving player is in check, `false` otherwise.
+    /// # Example
+    pub fn is_in_check(&self) -> bool {
+        let king_position = self.bitboards.king(self.current_turn);
+        let opponent_color = self.current_turn.opposite();
+        let opponent_moves = self.bitboards.attacks(opponent_color);
+        return opponent_moves.iter().any(|pos| pos == king_position);
+    }
+
+    pub fn make_move(&mut self, mov: Move) -> anyhow::Result<()> {
         let Some(piece_to_move) = self.board.piece_at(&mov.from) else {
-            println!("No piece to move at position {:?}", mov.from);
-            return;
+            anyhow::bail!("No piece to move at position {:?}", mov.from);
         };
         if piece_to_move.color() != self.current_turn {
-            println!("It's not {:?}'s turn to move.", piece_to_move.color());
-            return;
+            anyhow::bail!("It's not {:?}'s turn to move.", piece_to_move.color());
         }
         match &mov.move_type {
             MoveType::Castle => {
@@ -95,6 +104,7 @@ impl Game {
         self.current_turn = self.current_turn.opposite();
 
         self.bitboards = GameBitBoards::new(self);
+        Ok(())
     }
 
     pub fn unmake_move(&mut self) {
@@ -231,7 +241,8 @@ mod tests {
             Position::new_unchecked(3, 1),
             Position::new_unchecked(3, 3),
             MoveType::EnPassant(Position::new_unchecked(3, 2)),
-        ));
+        ))
+        .unwrap();
         assert_eq!(game.current_turn(), Color::Black);
         assert_eq!(
             game.board().piece_at(&Position::new_unchecked(3, 3)),
@@ -242,7 +253,8 @@ mod tests {
             Position::new_unchecked(3, 6),
             Position::new_unchecked(3, 5),
             MoveType::Quiet,
-        ));
+        ))
+        .unwrap();
         assert_eq!(game.current_turn(), Color::White);
         assert_eq!(
             game.board().piece_at(&Position::new_unchecked(3, 5)),
@@ -278,7 +290,8 @@ mod tests {
             Position::from_str("e1").unwrap(),
             Position::from_str("g1").unwrap(),
             MoveType::Castle,
-        ));
+        ))
+        .unwrap();
 
         assert_eq!(
             game.board().piece_at(&Position::from_str("g1").unwrap()),
@@ -305,7 +318,8 @@ mod tests {
             Position::from_str("e1").unwrap(),
             Position::from_str("c1").unwrap(),
             MoveType::Castle,
-        ));
+        ))
+        .unwrap();
         assert_eq!(
             game.board().piece_at(&Position::from_str("c1").unwrap()),
             Some(&Piece::new(PieceType::King, Color::White))
@@ -336,7 +350,8 @@ mod tests {
             Position::from_str("f4").unwrap(),
             Position::from_str("e5").unwrap(),
             MoveType::Capture(PieceType::Pawn),
-        ));
+        ))
+        .unwrap();
 
         assert_eq!(
             game.board().piece_at(&Position::from_str("e5").unwrap()),
@@ -368,7 +383,8 @@ mod tests {
             Position::from_str("e7").unwrap(),
             Position::from_str("e8").unwrap(),
             MoveType::PromotionQuite(PromotionType::Queen),
-        ));
+        ))
+        .unwrap();
         assert_eq!(
             game.board().piece_at(&Position::from_str("e8").unwrap()),
             Some(&Piece::new(PieceType::Queen, Color::White))
@@ -394,7 +410,8 @@ mod tests {
             Position::from_str("e7").unwrap(),
             Position::from_str("f8").unwrap(),
             MoveType::PromotionCapture(PromotionType::Queen, PieceType::Knight),
-        ));
+        ))
+        .unwrap();
         assert_eq!(
             game.board().piece_at(&Position::from_str("f8").unwrap()),
             Some(&Piece::new(PieceType::Queen, Color::White))

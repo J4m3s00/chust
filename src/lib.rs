@@ -7,6 +7,7 @@ pub mod fen;
 pub mod game;
 pub mod move_generation;
 pub mod moves;
+pub mod perft;
 pub mod piece;
 pub mod piece_type;
 pub mod position;

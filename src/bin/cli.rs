@@ -24,8 +24,12 @@ fn main() -> anyhow::Result<()> {
         let mut handle_command = || {
             match cmd {
                 "fen" => {
-                    game = Fen::parse_game(rest).context("Invalid fen string!")?;
-                    game.print_pieces();
+                    if rest.is_empty() {
+                        println!("{}", Fen::from_game(&game));
+                    } else {
+                        game = Fen::parse_game(rest).context("Invalid fen string!")?;
+                        game.print_pieces();
+                    }
                 }
                 "show" => {
                     let position = rest
@@ -61,7 +65,7 @@ fn main() -> anyhow::Result<()> {
                         .into_iter()
                         .find(|m| m.to == to)
                         .context("Could not find valid move")?;
-                    game.make_move(mov);
+                    let _ = game.make_move(mov);
                     game.print_pieces();
                 }
                 "um" => {
