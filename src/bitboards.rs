@@ -5,81 +5,6 @@ use crate::{
     position::Position, print_board::BoardPrinter,
 };
 
-#[derive(Default, Debug, PartialEq, Eq, Copy, Clone)]
-pub struct Bitboard(u64);
-
-impl Bitboard {
-    pub fn iter(&self) -> impl Iterator<Item = Position> + '_ {
-        (0..64).filter_map(|index| {
-            (self.0 & (1 << index) != 0).then_some(Position::from_board_index_unchecked(index))
-        })
-    }
-
-    pub fn inner(&self) -> u64 {
-        self.0
-    }
-}
-
-impl From<u64> for Bitboard {
-    fn from(value: u64) -> Self {
-        Self(value)
-    }
-}
-
-impl From<Position> for Bitboard {
-    fn from(position: Position) -> Self {
-        Self(1 << position.board_index())
-    }
-}
-
-impl BitOr<u64> for Bitboard {
-    type Output = u64;
-
-    fn bitor(self, rhs: u64) -> Self::Output {
-        self.0 | rhs
-    }
-}
-
-impl BitOrAssign<u64> for Bitboard {
-    fn bitor_assign(&mut self, rhs: u64) {
-        self.0 |= rhs;
-    }
-}
-
-impl BitOrAssign<Bitboard> for Bitboard {
-    fn bitor_assign(&mut self, rhs: Bitboard) {
-        self.0 |= rhs.0;
-    }
-}
-
-impl BitAnd<u64> for Bitboard {
-    type Output = u64;
-
-    fn bitand(self, rhs: u64) -> Self::Output {
-        self.0 & rhs
-    }
-}
-
-impl BitAndAssign<u64> for Bitboard {
-    fn bitand_assign(&mut self, rhs: u64) {
-        self.0 &= rhs;
-    }
-}
-
-impl BitAndAssign<Bitboard> for Bitboard {
-    fn bitand_assign(&mut self, rhs: Bitboard) {
-        self.0 &= rhs.0;
-    }
-}
-
-impl Not for Bitboard {
-    type Output = u64;
-
-    fn not(self) -> Self::Output {
-        !self.0
-    }
-}
-
 #[derive(Default, Debug, PartialEq)]
 pub struct GameBitBoards {
     pub white_pawns: Bitboard,
@@ -201,6 +126,70 @@ impl GameBitBoards {
 
         res
     }
+
+    // Helper functions to get correct bitboard
+    pub fn pawns(&self, color: Color) -> Bitboard {
+        match color {
+            Color::White => self.white_pawns,
+            Color::Black => self.black_pawns,
+        }
+    }
+
+    pub fn knights(&self, color: Color) -> Bitboard {
+        match color {
+            Color::White => self.white_knights,
+            Color::Black => self.black_knights,
+        }
+    }
+
+    pub fn bishops(&self, color: Color) -> Bitboard {
+        match color {
+            Color::White => self.white_bishops,
+            Color::Black => self.black_bishops,
+        }
+    }
+
+    pub fn rooks(&self, color: Color) -> Bitboard {
+        match color {
+            Color::White => self.white_rooks,
+            Color::Black => self.black_rooks,
+        }
+    }
+
+    pub fn queens(&self, color: Color) -> Bitboard {
+        match color {
+            Color::White => self.white_queens,
+            Color::Black => self.black_queens,
+        }
+    }
+
+    pub fn king(&self, color: Color) -> Position {
+        match color {
+            Color::White => self.white_king,
+            Color::Black => self.black_king,
+        }
+    }
+
+    pub fn pieces(&self, color: Color) -> Bitboard {
+        match color {
+            Color::White => self.white_pieces,
+            Color::Black => self.black_pieces,
+        }
+    }
+
+    pub fn attacks(&self, color: Color) -> Bitboard {
+        match color {
+            Color::White => self.white_attacks,
+            Color::Black => self.black_attacks,
+        }
+    }
+
+    pub fn pinned(&self, color: Color) -> Bitboard {
+        match color {
+            Color::White => self.white_pinned,
+            Color::Black => self.black_pinned,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -280,5 +269,84 @@ impl BoardPrinter for BitBoardPrinter {
         } else {
             ' '
         }
+    }
+}
+
+#[derive(Default, Debug, PartialEq, Eq, Copy, Clone)]
+pub struct Bitboard(u64);
+
+impl Bitboard {
+    pub fn iter(&self) -> impl Iterator<Item = Position> + '_ {
+        (0..64).filter_map(|index| {
+            (self.0 & (1 << index) != 0).then_some(Position::from_board_index_unchecked(index))
+        })
+    }
+
+    pub fn contains(&self, position: &Position) -> bool {
+        self.0 & (1 << position.board_index()) != 0
+    }
+
+    pub fn inner(&self) -> u64 {
+        self.0
+    }
+}
+
+impl From<u64> for Bitboard {
+    fn from(value: u64) -> Self {
+        Self(value)
+    }
+}
+
+impl From<Position> for Bitboard {
+    fn from(position: Position) -> Self {
+        Self(1 << position.board_index())
+    }
+}
+
+impl BitOr<u64> for Bitboard {
+    type Output = u64;
+
+    fn bitor(self, rhs: u64) -> Self::Output {
+        self.0 | rhs
+    }
+}
+
+impl BitOrAssign<u64> for Bitboard {
+    fn bitor_assign(&mut self, rhs: u64) {
+        self.0 |= rhs;
+    }
+}
+
+impl BitOrAssign<Bitboard> for Bitboard {
+    fn bitor_assign(&mut self, rhs: Bitboard) {
+        self.0 |= rhs.0;
+    }
+}
+
+impl BitAnd<u64> for Bitboard {
+    type Output = u64;
+
+    fn bitand(self, rhs: u64) -> Self::Output {
+        self.0 & rhs
+    }
+}
+
+impl BitAndAssign<u64> for Bitboard {
+    fn bitand_assign(&mut self, rhs: u64) {
+        self.0 &= rhs;
+    }
+}
+
+impl BitAndAssign<Bitboard> for Bitboard {
+    fn bitand_assign(&mut self, rhs: Bitboard) {
+        self.0 &= rhs.0;
+    }
+}
+
+impl Not for Bitboard {
+    type Output = u64;
+
+    fn not(self) -> Self::Output {
+        !self.0
     }
 }
