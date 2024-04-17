@@ -72,6 +72,18 @@ impl MoveGenerator<'_> {
                 let castle_dir = mov.to.file() as i8 - mov.from.file() as i8;
                 let castle_dir = castle_dir / castle_dir.abs();
 
+                if castle_dir == -1 {
+                    // Queen side castle
+                    if !self.game.castle_rights(to_move_color).queen_side() {
+                        return false;
+                    }
+                } else if castle_dir == 1 {
+                    // King side castle
+                    if !self.game.castle_rights(to_move_color).king_side() {
+                        return false;
+                    }
+                }
+
                 let all_to_check = [
                     Position::new_unchecked(mov.from.file(), root_rank),
                     Position::new_unchecked(
@@ -353,11 +365,17 @@ impl MoveGenerator<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::board::Board;
+    use crate::{board::Board, game::CastleRights};
 
     #[test]
     fn test_pawn_pseudo_legal_moves() {
-        let game = Game::new(Board::default(), Color::White);
+        let game = Game::new(
+            Board::default(),
+            Color::White,
+            CastleRights::Both,
+            CastleRights::Both,
+            None,
+        );
         let move_generator = MoveGenerator::new(&game);
 
         let white_pawn = Position::new_unchecked(3, 1);
@@ -370,7 +388,13 @@ mod tests {
 
     #[test]
     fn test_knight_pseudo_legal_moves() {
-        let game = Game::new(Board::default(), Color::White);
+        let game = Game::new(
+            Board::default(),
+            Color::White,
+            CastleRights::Both,
+            CastleRights::Both,
+            None,
+        );
         let move_generator = MoveGenerator::new(&game);
 
         let knight = Position::new_unchecked(3, 3);
@@ -380,7 +404,13 @@ mod tests {
 
     #[test]
     fn test_bishop_pseudo_legal_moves() {
-        let game = Game::new(Board::default(), Color::White);
+        let game = Game::new(
+            Board::default(),
+            Color::White,
+            CastleRights::Both,
+            CastleRights::Both,
+            None,
+        );
         let move_generator = MoveGenerator::new(&game);
 
         let bishop = Position::new_unchecked(3, 3);
@@ -390,7 +420,13 @@ mod tests {
 
     #[test]
     fn test_rook_pseudo_legal_moves() {
-        let game = Game::new(Board::default(), Color::White);
+        let game = Game::new(
+            Board::default(),
+            Color::White,
+            CastleRights::Both,
+            CastleRights::Both,
+            None,
+        );
         let move_generator = MoveGenerator::new(&game);
 
         let rook = Position::new_unchecked(3, 3);
@@ -400,7 +436,13 @@ mod tests {
 
     #[test]
     fn test_queen_pseudo_legal_moves() {
-        let game = Game::new(Board::default(), Color::White);
+        let game = Game::new(
+            Board::default(),
+            Color::White,
+            CastleRights::Both,
+            CastleRights::Both,
+            None,
+        );
         let move_generator = MoveGenerator::new(&game);
 
         let queen = Position::new_unchecked(3, 3);
@@ -410,7 +452,13 @@ mod tests {
 
     #[test]
     fn test_king_pseudo_legal_moves() {
-        let game = Game::new(Board::default(), Color::White);
+        let game = Game::new(
+            Board::default(),
+            Color::White,
+            CastleRights::Both,
+            CastleRights::Both,
+            None,
+        );
         let move_generator = MoveGenerator::new(&game);
 
         let king = Position::new_unchecked(3, 3);

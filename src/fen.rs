@@ -1,7 +1,14 @@
+use std::str::FromStr;
+
 use anyhow::Context;
 
 use crate::{
-    board::Board, color::Color, game::Game, piece::Piece, piece_type::PieceType, position::Position,
+    board::Board,
+    color::Color,
+    game::{CastleRights, Game},
+    piece::Piece,
+    piece_type::PieceType,
+    position::Position,
 };
 
 pub struct Fen;
@@ -42,11 +49,26 @@ impl Fen {
 
         fen.push(' ');
 
-        fen.push_str("KQkq");
+        let white_castling = game.white_castle_rights();
+        let black_castling = game.black_castle_rights();
+        match (white_castling, black_castling) {
+            (CastleRights::None, CastleRights::None) => fen.push('-'),
+            (CastleRights::None, black) => fen.push_str(black.to_string(Color::Black)),
+            (white, CastleRights::None) => fen.push_str(white.to_string(Color::White)),
+            (white, black) => {
+                fen.push_str(white.to_string(Color::White));
+                fen.push_str(black.to_string(Color::Black));
+            }
+        }
 
         fen.push(' ');
 
-        fen.push_str("-");
+        fen.push_str(
+            game.en_passent_field()
+                .map(|p| p.to_string())
+                .unwrap_or("-".to_string())
+                .as_str(),
+        );
 
         fen.push(' ');
 
@@ -118,7 +140,43 @@ impl Fen {
             })
             .unwrap_or(Ok(Color::White))?;
 
-        Ok(Game::new(board, turn_color))
+        let (castle_white, castle_black) = part_iter
+            .next()
+            .map(|castle_rights| {
+                let mut white_castle_rights = CastleRights::None;
+                let mut black_castle_rights = CastleRights::None;
+                for c in castle_rights.chars() {
+                    match c {
+                        'K' => white_castle_rights |= CastleRights::KingSide,
+                        'Q' => white_castle_rights |= CastleRights::QueenSide,
+                        'k' => black_castle_rights |= CastleRights::KingSide,
+                        'q' => black_castle_rights |= CastleRights::QueenSide,
+                        '-' => (),
+                        _ => anyhow::bail!("Failed to parse fen. Unknown castle right {c}"),
+                    }
+                }
+                Ok((white_castle_rights, black_castle_rights))
+            })
+            .unwrap_or(Ok((CastleRights::None, CastleRights::None)))?;
+
+        let en_passent_field = part_iter
+            .next()
+            .map(|en_passent_field| {
+                if en_passent_field == "-" {
+                    Ok(None)
+                } else {
+                    Position::from_str(en_passent_field).map(Some)
+                }
+            })
+            .unwrap_or(Ok(None))?;
+
+        Ok(Game::new(
+            board,
+            turn_color,
+            castle_white,
+            castle_black,
+            en_passent_field,
+        ))
     }
 }
 
@@ -127,7 +185,7 @@ mod tests {
     use super::Fen;
     use crate::board::Board;
     use crate::color::Color;
-    use crate::game::Game;
+    use crate::game::{CastleRights, Game};
     use crate::piece::Piece;
     use crate::piece_type::PieceType;
     use crate::position::Position;
@@ -291,7 +349,13 @@ mod tests {
             &Position::new(7, 7).unwrap(),
         );
 
-        let expected_game = Game::new(expected_board, Color::White);
+        let expected_game = Game::new(
+            expected_board,
+            Color::White,
+            CastleRights::Both,
+            CastleRights::Both,
+            None,
+        );
 
         assert_eq!(game, expected_game);
     }

@@ -37,7 +37,7 @@ fn main() -> anyhow::Result<()> {
                         .context("Please provide a position to show possible moves")?;
 
                     let generator = MoveGenerator::new(&game);
-                    let legal_moves = generator.pseudo_legal_moves(&position);
+                    let legal_moves = generator.legal_moves(&position);
 
                     game.print_custom(|p: Position, _: &Game| {
                         if legal_moves.iter().any(|m| m.to == p) {

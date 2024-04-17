@@ -9,7 +9,7 @@ use anyhow::Context;
 
 use crate::{fen::Fen, game::Game, move_generation::MoveGenerator};
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct PerfTestResults {
     nodes: HashMap<String, u64>,
     node_count: u64,

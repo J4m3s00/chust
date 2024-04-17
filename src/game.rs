@@ -1,3 +1,5 @@
+use std::ops::BitOrAssign;
+
 use crate::{
     bitboards::GameBitBoards,
     board::Board,
@@ -10,19 +12,16 @@ use crate::{
     print_board::{BoardPrinter, DefaultBoardPrinter},
 };
 
-pub enum CastleRights {
-    None,
-    KingSide,
-    QueenSide,
-    Both,
-}
-
 #[derive(Debug, PartialEq)]
 pub struct Game {
     current_turn: Color,
     board: Board,
-    move_stack: Vec<Move>,
+    move_stack: Vec<(Move, CastleRights, CastleRights)>,
     bitboards: GameBitBoards,
+
+    white_castle_rights: CastleRights,
+    black_castle_rights: CastleRights,
+    en_passent_field: Option<Position>,
 }
 
 impl Default for Game {
@@ -33,12 +32,21 @@ impl Default for Game {
 }
 
 impl Game {
-    pub fn new(board: Board, current_turn: Color) -> Self {
+    pub fn new(
+        board: Board,
+        current_turn: Color,
+        white_castle_rights: CastleRights,
+        black_castle_rights: CastleRights,
+        en_passent_field: Option<Position>,
+    ) -> Self {
         let mut res = Self {
             board,
             current_turn,
             move_stack: Vec::new(),
             bitboards: GameBitBoards::default(),
+            white_castle_rights,
+            black_castle_rights,
+            en_passent_field,
         };
         res.bitboards = GameBitBoards::new(&res);
         res
@@ -62,6 +70,25 @@ impl Game {
         if piece_to_move.color() != self.current_turn {
             anyhow::bail!("It's not {:?}'s turn to move.", piece_to_move.color());
         }
+
+        // If rook or king moves, remove castle rights
+        // Save castle rights for unmake_move
+        let cur_castle_rights = (self.white_castle_rights, self.black_castle_rights);
+        match piece_to_move.kind() {
+            PieceType::King => {
+                self.castle_rights_mut(self.current_turn).remove_both();
+            }
+            PieceType::Rook => {
+                if mov.from == Position::new_unchecked(0, self.current_turn.root_rank()) {
+                    self.castle_rights_mut(self.current_turn)
+                        .remove_queen_side();
+                } else if mov.from == Position::new_unchecked(7, self.current_turn.root_rank()) {
+                    self.castle_rights_mut(self.current_turn).remove_king_side();
+                }
+            }
+            _ => {}
+        }
+
         match &mov.move_type {
             MoveType::Castle => {
                 let root_rank = self.current_turn.root_rank();
@@ -98,9 +125,15 @@ impl Game {
                     &mov.to,
                 );
             }
+            MoveType::EnPassant(pos) => {
+                self.board.make_move(&mov.from, &mov.to);
+                self.en_passent_field = Some(*pos);
+            }
             _ => self.board.make_move(&mov.from, &mov.to),
         }
-        self.move_stack.push(mov);
+
+        self.move_stack
+            .push((mov, cur_castle_rights.0, cur_castle_rights.1));
         self.current_turn = self.current_turn.opposite();
 
         self.bitboards = GameBitBoards::new(self);
@@ -108,7 +141,7 @@ impl Game {
     }
 
     pub fn unmake_move(&mut self) {
-        let Some(mov) = self.move_stack.pop() else {
+        let Some((mov, white_castle, black_castle)) = self.move_stack.pop() else {
             println!("No moves to unmake.");
             return;
         };
@@ -170,6 +203,8 @@ impl Game {
                 self.board.make_move(&mov.to, &mov.from);
             }
         }
+        self.white_castle_rights = white_castle;
+        self.black_castle_rights = black_castle;
         self.current_turn = self.current_turn.opposite();
 
         self.bitboards = GameBitBoards::new(self);
@@ -185,6 +220,32 @@ impl Game {
 
     pub fn bitboards(&self) -> &GameBitBoards {
         &self.bitboards
+    }
+
+    pub fn white_castle_rights(&self) -> CastleRights {
+        self.white_castle_rights
+    }
+
+    pub fn black_castle_rights(&self) -> CastleRights {
+        self.black_castle_rights
+    }
+
+    pub fn castle_rights(&self, color: Color) -> CastleRights {
+        match color {
+            Color::White => self.white_castle_rights,
+            Color::Black => self.black_castle_rights,
+        }
+    }
+
+    pub fn castle_rights_mut(&mut self, color: Color) -> &mut CastleRights {
+        match color {
+            Color::White => &mut self.white_castle_rights,
+            Color::Black => &mut self.black_castle_rights,
+        }
+    }
+
+    pub fn en_passent_field(&self) -> Option<Position> {
+        self.en_passent_field
     }
 
     /// # Example
@@ -219,6 +280,73 @@ impl Game {
     #[cfg_attr(coverage_nightly, coverage(off))]
     pub fn print_pieces(&self) {
         self.print_custom(DefaultBoardPrinter);
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum CastleRights {
+    None,
+    KingSide,
+    QueenSide,
+    Both,
+}
+
+impl CastleRights {
+    pub fn remove_king_side(&mut self) {
+        match self {
+            CastleRights::KingSide => *self = CastleRights::None,
+            CastleRights::Both => *self = CastleRights::QueenSide,
+            _ => {}
+        }
+    }
+
+    pub fn remove_queen_side(&mut self) {
+        match self {
+            CastleRights::QueenSide => *self = CastleRights::None,
+            CastleRights::Both => *self = CastleRights::KingSide,
+            _ => {}
+        }
+    }
+
+    pub fn remove_both(&mut self) {
+        *self = CastleRights::None;
+    }
+
+    pub fn queen_side(&self) -> bool {
+        match self {
+            CastleRights::QueenSide | CastleRights::Both => true,
+            _ => false,
+        }
+    }
+
+    pub fn king_side(&self) -> bool {
+        match self {
+            CastleRights::KingSide | CastleRights::Both => true,
+            _ => false,
+        }
+    }
+
+    pub fn to_string(&self, color: Color) -> &str {
+        match (self, color) {
+            (CastleRights::None, _) => "-",
+            (CastleRights::KingSide, Color::White) => "K",
+            (CastleRights::KingSide, Color::Black) => "k",
+            (CastleRights::QueenSide, Color::White) => "Q",
+            (CastleRights::QueenSide, Color::Black) => "q",
+            (CastleRights::Both, Color::White) => "KQ",
+            (CastleRights::Both, Color::Black) => "kq",
+        }
+    }
+}
+
+impl BitOrAssign for CastleRights {
+    fn bitor_assign(&mut self, rhs: Self) {
+        match (&self, rhs) {
+            (CastleRights::None, _) => *self = rhs,
+            (CastleRights::KingSide, CastleRights::QueenSide) => *self = CastleRights::Both,
+            (CastleRights::QueenSide, CastleRights::KingSide) => *self = CastleRights::Both,
+            _ => {}
+        }
     }
 }
 
