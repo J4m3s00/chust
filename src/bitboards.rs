@@ -26,8 +26,8 @@ pub struct GameBitBoards {
     pub white_attacks: Bitboard,
     pub black_attacks: Bitboard,
 
-    pub white_pinned: Bitboard,
-    pub black_pinned: Bitboard,
+    pub white_pinned: Vec<Bitboard>,
+    pub black_pinned: Vec<Bitboard>,
 }
 
 impl GameBitBoards {
@@ -82,13 +82,13 @@ impl GameBitBoards {
         this
     }
 
-    fn generate_king_pins(&self, game: &Game, color: Color) -> Bitboard {
+    fn generate_king_pins(&self, game: &Game, color: Color) -> Vec<Bitboard> {
         let king_position = match color {
             Color::White => self.white_king,
             Color::Black => self.black_king,
         };
 
-        let mut res = Bitboard::default();
+        let mut res = Vec::default();
 
         for direction in &[
             (1, 0, &[PieceType::Rook, PieceType::Queen]),
@@ -112,7 +112,7 @@ impl GameBitBoards {
                 if let Some(piece) = game.board().piece_at(&position) {
                     if piece.color() != color {
                         if count == 1 && direction.2.contains(&piece.kind()) {
-                            res |= pinned;
+                            res.push(pinned);
                         }
                         break;
                     } else {
@@ -184,10 +184,10 @@ impl GameBitBoards {
         }
     }
 
-    pub fn pinned(&self, color: Color) -> Bitboard {
+    pub fn pinned(&self, color: Color) -> &[Bitboard] {
         match color {
-            Color::White => self.white_pinned,
-            Color::Black => self.black_pinned,
+            Color::White => &self.white_pinned,
+            Color::Black => &self.black_pinned,
         }
     }
 }
@@ -259,8 +259,20 @@ impl BoardPrinter for BitBoardPrinter {
             Self::BlackPieces => game.bitboards().black_pieces,
             Self::WhiteAttacks => game.bitboards().white_attacks,
             Self::BlackAttacks => game.bitboards().black_attacks,
-            Self::WhitePinned => game.bitboards().white_pinned,
-            Self::BlackPinned => game.bitboards().black_pinned,
+            Self::WhitePinned => game
+                .bitboards()
+                .white_pinned
+                .iter()
+                .fold(Bitboard::default(), |acc, pinned| {
+                    Bitboard::from(acc | *pinned)
+                }),
+            Self::BlackPinned => game
+                .bitboards()
+                .black_pinned
+                .iter()
+                .fold(Bitboard::default(), |acc, pinned| {
+                    Bitboard::from(acc | *pinned)
+                }),
         };
 
         let is_occupied = bit_value & (1 << position.board_index()) != 0;
@@ -311,6 +323,14 @@ impl BitOr<u64> for Bitboard {
     }
 }
 
+impl BitOr<Bitboard> for Bitboard {
+    type Output = Self;
+
+    fn bitor(self, rhs: Self) -> Self::Output {
+        Self::from(self.0 | rhs.0)
+    }
+}
+
 impl BitOrAssign<u64> for Bitboard {
     fn bitor_assign(&mut self, rhs: u64) {
         self.0 |= rhs;
@@ -328,6 +348,14 @@ impl BitAnd<u64> for Bitboard {
 
     fn bitand(self, rhs: u64) -> Self::Output {
         self.0 & rhs
+    }
+}
+
+impl BitAnd<Bitboard> for Bitboard {
+    type Output = Self;
+
+    fn bitand(self, rhs: Self) -> Self::Output {
+        Self::from(self.0 & rhs.0)
     }
 }
 
