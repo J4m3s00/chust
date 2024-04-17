@@ -17,8 +17,6 @@ pub struct PerfTestResults {
 
 impl PerfTestResults {
     pub fn show_diff(&self, other: &PerfTestResults) {
-        let mut mismatches = false;
-
         for (mov, nodes) in self.nodes.iter() {
             if let Some(stockfish_nodes) = other.nodes.get(mov) {
                 if nodes != stockfish_nodes {
@@ -26,16 +24,23 @@ impl PerfTestResults {
                         "Mismatch for move {}: {} != {}",
                         mov, nodes, stockfish_nodes
                     );
-                    mismatches = true;
                 }
             } else {
                 println!("Move {} not found in stockfish results", mov);
-                mismatches = true;
             }
         }
 
-        if !mismatches {
+        // Find what the other found and we didnt
+        for (mov, _) in other.nodes.iter() {
+            if self.nodes.get(mov).is_none() {
+                println!("Move {mov} not found in own results");
+            }
+        }
+
+        if self.node_count == other.node_count {
             println!("Results match! ({} nodes)", self.node_count);
+        } else {
+            println!("Sockfish ({}) Self({})", other.node_count, self.node_count);
         }
     }
 }

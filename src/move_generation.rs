@@ -36,6 +36,30 @@ impl MoveGenerator<'_> {
 
         let enemy_attacks = self.game.bitboards().attacks(to_move_color.opposite());
 
+        // Check if we are in check and need to block. Moving out should be checked be the king movement
+        let blockable_checks = self.game.bitboards().blockable_checks(to_move_color);
+
+        if enemy_attacks.contains(&self.game.bitboards().king(to_move_color)) {
+            // We are currently in check. We need to block, or move the king out of the way
+            match piece_to_move.kind() {
+                PieceType::King => {
+                    // Move out of check
+                    if enemy_attacks.contains(&mov.to) {
+                        return false;
+                    }
+                }
+                _ if blockable_checks.len() == 1 => {
+                    let blockable = blockable_checks[0];
+                    return blockable.contains(&mov.to);
+                }
+                _ => {
+                    // We cant block, because more than one piece is attacking or we are attacked be a knight or pawn
+                    return false;
+                }
+            }
+        }
+
+        // Check if king is moving into check and casteling rights
         if let PieceType::King = piece_to_move.kind() {
             // Filter out when the king moves into check
             if enemy_attacks.contains(&mov.to) {
@@ -65,6 +89,14 @@ impl MoveGenerator<'_> {
                     return false;
                 }
             }
+        }
+
+        // Check pins
+        let pinned = self.game.bitboards().pinned(to_move_color);
+        if let Some(pinned) = pinned.iter().find(|board| board.contains(&mov.from)) {
+            // The piece we move is pinned
+            // We can only move in the pin
+            return pinned.contains(&mov.to);
         }
 
         true
