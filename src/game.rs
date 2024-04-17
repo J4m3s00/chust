@@ -1,4 +1,5 @@
 use crate::{
+    bitboards::GameBitBoards,
     board::Board,
     color::Color,
     fen::Fen,
@@ -6,6 +7,7 @@ use crate::{
     piece::Piece,
     piece_type::PieceType,
     position::Position,
+    print_board::{BoardPrinter, DefaultBoardPrinter},
 };
 
 pub enum CastleRights {
@@ -20,6 +22,7 @@ pub struct Game {
     current_turn: Color,
     board: Board,
     move_stack: Vec<Move>,
+    bitboards: GameBitBoards,
 }
 
 impl Default for Game {
@@ -31,11 +34,14 @@ impl Default for Game {
 
 impl Game {
     pub fn new(board: Board, current_turn: Color) -> Self {
-        Self {
+        let mut res = Self {
             board,
             current_turn,
             move_stack: Vec::new(),
-        }
+            bitboards: GameBitBoards::default(),
+        };
+        res.bitboards = GameBitBoards::new(&res);
+        res
     }
 
     pub fn make_move(&mut self, mov: Move) {
@@ -87,6 +93,8 @@ impl Game {
         }
         self.move_stack.push(mov);
         self.current_turn = self.current_turn.opposite();
+
+        self.bitboards = GameBitBoards::new(self);
     }
 
     pub fn unmake_move(&mut self) {
@@ -153,6 +161,8 @@ impl Game {
             }
         }
         self.current_turn = self.current_turn.opposite();
+
+        self.bitboards = GameBitBoards::new(self);
     }
 
     pub fn board(&self) -> &Board {
@@ -161,6 +171,44 @@ impl Game {
 
     pub fn current_turn(&self) -> Color {
         self.current_turn
+    }
+
+    pub fn bitboards(&self) -> &GameBitBoards {
+        &self.bitboards
+    }
+
+    /// # Example
+    /// ```
+    /// use crate::chust::{game::Game, print_board::DefaultBoardPrinter, piece::Piece, position::Position};
+    /// let game = Game::default();
+    ///
+    /// // For the default builder
+    /// game.print_custom(DefaultBoardPrinter);
+    ///
+    /// // With closure
+    /// game.print_custom(|p: Position, game: &Game| {
+    ///     let piece = game.board().piece_at(&p);
+    ///     piece.map(|p| 'X').unwrap_or(' ')
+    /// });
+    /// ```
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    pub fn print_custom(&self, printer: impl BoardPrinter) {
+        println!("+---+---+---+---+---+---+---+---+");
+        for i in 0..8 {
+            print!("|");
+            for j in 0..8 {
+                let pos = Position::new_unchecked(j, 7 - i);
+                print!(" {} |", printer.get_char(pos, self));
+            }
+            println!(" {}", 8 - i);
+            println!("+---+---+---+---+---+---+---+---+");
+        }
+        println!("  a   b   c   d   e   f   g   h  ");
+    }
+
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    pub fn print_pieces(&self) {
+        self.print_custom(DefaultBoardPrinter);
     }
 }
 

@@ -1,12 +1,13 @@
 use anyhow::Context;
 use chust::{
-    fen::Fen, game::Game, move_generation::MoveGenerator, piece::Piece, position::Position,
+    bitboards::BitBoardPrinter, fen::Fen, game::Game, move_generation::MoveGenerator,
+    position::Position,
 };
 
 fn main() -> anyhow::Result<()> {
     let mut game = Game::default();
 
-    game.board().print_pieces();
+    game.print_pieces();
 
     loop {
         let mut input = String::new();
@@ -24,6 +25,7 @@ fn main() -> anyhow::Result<()> {
             match cmd {
                 "fen" => {
                     game = Fen::parse_game(rest).context("Invalid fen string!")?;
+                    game.print_pieces();
                 }
                 "show" => {
                     let position = rest
@@ -33,7 +35,7 @@ fn main() -> anyhow::Result<()> {
                     let generator = MoveGenerator::new(&game);
                     let legal_moves = generator.pseudo_legal_moves(&position);
 
-                    game.board().print_custom(|_: Option<Piece>, p: Position| {
+                    game.print_custom(|p: Position, _: &Game| {
                         if legal_moves.iter().any(|m| m.to == p) {
                             'X'
                         } else {
@@ -60,14 +62,28 @@ fn main() -> anyhow::Result<()> {
                         .find(|m| m.to == to)
                         .context("Could not find valid move")?;
                     game.make_move(mov);
-                    game.board().print_pieces();
+                    game.print_pieces();
                 }
                 "um" => {
                     game.unmake_move();
-                    game.board().print_pieces();
+                    game.print_pieces();
                 }
                 "print" => {
-                    game.board().print_pieces();
+                    game.print_pieces();
+                }
+                "bitboard" => {
+                    let which = BitBoardPrinter::ALL_IDENTIFIED
+                        .iter()
+                        .find(|(name, _)| name == &rest)
+                        .with_context(|| {
+                            let possible_values = BitBoardPrinter::ALL_IDENTIFIED.map(|i| i.0);
+                            format!(
+                                "Unknown bitboard {}. \nPossible values:\n{}",
+                                rest,
+                                possible_values.join("\n")
+                            )
+                        })?;
+                    game.print_custom(which.1);
                 }
                 "quit" => {
                     return Ok::<Option<()>, anyhow::Error>(Some(()));

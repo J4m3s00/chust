@@ -18,6 +18,27 @@ impl<'a> MoveGenerator<'a> {
 
 // Pseudo legal moves are moves that are legal in terms of the rules of chess, but may not be legal
 impl MoveGenerator<'_> {
+    /// Returns all possible attacking moves for a piece at the given position.
+    /// This includes moves that are not legal due to the king being in check.
+    /// This is useful for generating moves for the king, as it needs to know all possible
+    pub fn possible_attacking_moves(&self, position: &Position) -> Vec<Move> {
+        let board = self.game.board();
+        let Some(piece) = board.piece_at(position) else {
+            return Vec::new();
+        };
+
+        match piece.kind() {
+            PieceType::Pawn => self.pawn_possible_attacking_moves(position, piece.color()),
+            PieceType::Knight => self.knight_pseudo_legal_moves(position, piece.color()),
+            PieceType::Bishop => self.bishop_pseudo_legal_moves(position, piece.color()),
+            PieceType::Rook => self.rook_pseudo_legal_moves(position, piece.color()),
+            PieceType::Queen => self.queen_pseudo_legal_moves(position, piece.color()),
+            PieceType::King => self.king_pseudo_legal_moves(position, piece.color()),
+        }
+    }
+
+    /// Returns all pseudo legal moves for a piece at the given position.
+    /// This includes moves that are not legal due to the king being in check.
     pub fn pseudo_legal_moves(&self, position: &Position) -> Vec<Move> {
         let board = self.game.board();
         let Some(piece) = board.piece_at(position) else {
@@ -60,21 +81,30 @@ impl MoveGenerator<'_> {
         }
 
         // Capture moves
-        for &dx in &[-1, 1] {
-            if let Some(new_pos) = position.offset(dx, direction) {
-                if let Some(piece) = board.piece_at(&new_pos) {
-                    if piece.color() != color {
-                        result.push(Move::new(
-                            *position,
-                            new_pos,
-                            MoveType::Capture(piece.kind()),
-                        ));
+        result.extend(
+            self.pawn_possible_attacking_moves(position, color)
+                .into_iter()
+                .filter(|mov| {
+                    if let Some(piece) = board.piece_at(&mov.to) {
+                        piece.color() != color
+                    } else {
+                        false
                     }
-                }
-            }
-        }
+                }),
+        );
 
         result
+    }
+
+    fn pawn_possible_attacking_moves(&self, position: &Position, color: Color) -> Vec<Move> {
+        let dir = color.board_direction();
+        let mut res = Vec::with_capacity(2);
+        for &dx in &[-1, 1] {
+            if let Some(new_pos) = position.offset(dx, dir) {
+                res.push(Move::new(*position, new_pos, MoveType::Quiet));
+            }
+        }
+        res
     }
 
     fn knight_pseudo_legal_moves(&self, position: &Position, color: Color) -> Vec<Move> {
