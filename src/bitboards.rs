@@ -28,6 +28,9 @@ pub struct GameBitBoards {
 
     pub white_pinned: Vec<Bitboard>,
     pub black_pinned: Vec<Bitboard>,
+
+    pub white_blockable_check: Vec<Bitboard>,
+    pub black_blockable_check: Vec<Bitboard>,
 }
 
 impl GameBitBoards {
@@ -76,19 +79,26 @@ impl GameBitBoards {
         }
 
         // Pins
-        this.white_pinned = this.generate_king_pins(game, Color::White);
-        this.black_pinned = this.generate_king_pins(game, Color::Black);
+        (this.white_pinned, this.white_blockable_check) =
+            this.generate_king_pins_and_checks(game, Color::White);
+        (this.black_pinned, this.black_blockable_check) =
+            this.generate_king_pins_and_checks(game, Color::Black);
 
         this
     }
 
-    fn generate_king_pins(&self, game: &Game, color: Color) -> Vec<Bitboard> {
+    fn generate_king_pins_and_checks(
+        &self,
+        game: &Game,
+        color: Color,
+    ) -> (Vec<Bitboard>, Vec<Bitboard>) {
         let king_position = match color {
             Color::White => self.white_king,
             Color::Black => self.black_king,
         };
 
-        let mut res = Vec::default();
+        let mut pins = Vec::default();
+        let mut checks = Vec::default();
 
         for direction in &[
             (1, 0, &[PieceType::Rook, PieceType::Queen]),
@@ -108,11 +118,18 @@ impl GameBitBoards {
                     Some(position) => position,
                     None => break,
                 };
+                pinned |= 1 << position.board_index();
 
                 if let Some(piece) = game.board().piece_at(&position) {
                     if piece.color() != color {
-                        if count == 1 && direction.2.contains(&piece.kind()) {
-                            res.push(pinned);
+                        if direction.2.contains(&piece.kind()) {
+                            if count == 0 {
+                                checks.push(pinned);
+                            } else if count == 1 {
+                                pins.push(pinned);
+                            } else {
+                                unreachable!()
+                            }
                         }
                         break;
                     } else {
@@ -120,11 +137,13 @@ impl GameBitBoards {
                     }
                 }
 
-                pinned |= 1 << position.board_index();
+                if count >= 2 {
+                    break; // We have two pieces in between. No checks or pins can occur
+                }
             }
         }
 
-        res
+        (pins, checks)
     }
 
     // Helper functions to get correct bitboard
@@ -190,6 +209,13 @@ impl GameBitBoards {
             Color::Black => &self.black_pinned,
         }
     }
+
+    pub fn blockable_checks(&self, color: Color) -> &[Bitboard] {
+        match color {
+            Color::White => &self.white_blockable_check,
+            Color::Black => &self.black_blockable_check,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -215,10 +241,13 @@ pub enum BitBoardPrinter {
 
     WhitePinned,
     BlackPinned,
+
+    WhiteBlockableChecks,
+    BlackBlockableChecks,
 }
 
 impl BitBoardPrinter {
-    pub const ALL_IDENTIFIED: [(&'static str, Self); 18] = [
+    pub const ALL_IDENTIFIED: [(&'static str, Self); 20] = [
         ("white_pawns", Self::WhitePawns),
         ("white_knights", Self::WhiteKnights),
         ("white_bishops", Self::WhiteBishops),
@@ -237,6 +266,8 @@ impl BitBoardPrinter {
         ("black_attacks", Self::BlackAttacks),
         ("white_pinned", Self::WhitePinned),
         ("black_pinned", Self::BlackPinned),
+        ("white_checks", Self::WhiteBlockableChecks),
+        ("black_checks", Self::BlackBlockableChecks),
     ];
 }
 
@@ -269,6 +300,20 @@ impl BoardPrinter for BitBoardPrinter {
             Self::BlackPinned => game
                 .bitboards()
                 .black_pinned
+                .iter()
+                .fold(Bitboard::default(), |acc, pinned| {
+                    Bitboard::from(acc | *pinned)
+                }),
+            Self::WhiteBlockableChecks => game
+                .bitboards()
+                .white_blockable_check
+                .iter()
+                .fold(Bitboard::default(), |acc, pinned| {
+                    Bitboard::from(acc | *pinned)
+                }),
+            Self::BlackBlockableChecks => game
+                .bitboards()
+                .black_blockable_check
                 .iter()
                 .fold(Bitboard::default(), |acc, pinned| {
                     Bitboard::from(acc | *pinned)
