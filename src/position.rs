@@ -1,5 +1,7 @@
 use std::{fmt::Display, str::FromStr};
 
+use anyhow::Context;
+
 /// The position on the board
 /// Bottom left is (0, 0) or in chess terms 'A1'
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
@@ -66,12 +68,19 @@ impl FromStr for Position {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.len() != 2 {
+            anyhow::bail!("Invalid position string. Must be 2 characters long.");
+        }
         let mut chars = s.chars();
         let col_char = chars.next().ok_or(anyhow::anyhow!("No column character"))?;
         let row_char = chars.next().ok_or(anyhow::anyhow!("No row character"))?;
 
-        let x = col_char as u8 - b'a';
-        let y = row_char as u8 - b'1';
+        let x = (col_char as u8)
+            .checked_sub(b'a')
+            .with_context(|| format!("Unknown column char {col_char}"))?;
+        let y = (row_char as u8)
+            .checked_sub(b'1')
+            .with_context(|| format!("Unknown row char {row_char}"))?;
 
         Self::new(x, y).ok_or(anyhow::anyhow!("Position out of bounds"))
     }
