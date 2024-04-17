@@ -74,7 +74,7 @@ impl Game {
         // If rook or king moves, remove castle rights
         // Save castle rights for unmake_move
         let cur_castle_rights = (self.white_castle_rights, self.black_castle_rights);
-        match piece_to_move.kind() {
+        match piece_to_move.piece_type() {
             PieceType::King => {
                 self.castle_rights_mut(self.current_turn).remove_both();
             }

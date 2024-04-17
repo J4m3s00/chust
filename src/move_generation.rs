@@ -41,7 +41,7 @@ impl MoveGenerator<'_> {
 
         if enemy_attacks.contains(&self.game.bitboards().king(to_move_color)) {
             // We are currently in check. We need to block, or move the king out of the way
-            match piece_to_move.kind() {
+            match piece_to_move.piece_type() {
                 PieceType::King => {
                     // Move out of check
                     if enemy_attacks.contains(&mov.to) {
@@ -60,7 +60,7 @@ impl MoveGenerator<'_> {
         }
 
         // Check if king is moving into check and casteling rights
-        if let PieceType::King = piece_to_move.kind() {
+        if let PieceType::King = piece_to_move.piece_type() {
             // Filter out when the king moves into check
             if enemy_attacks.contains(&mov.to) {
                 return false;
@@ -126,7 +126,7 @@ impl MoveGenerator<'_> {
             return Vec::new();
         };
 
-        match piece.kind() {
+        match piece.piece_type() {
             PieceType::Pawn => self.pawn_possible_attacking_moves(position, piece.color()),
             PieceType::Knight => self.knight_pseudo_legal_moves(position, piece.color()),
             PieceType::Bishop => self.bishop_pseudo_legal_moves(position, piece.color()),
@@ -144,7 +144,7 @@ impl MoveGenerator<'_> {
             return Vec::new();
         };
 
-        match piece.kind() {
+        match piece.piece_type() {
             PieceType::Pawn => self.pawn_pseudo_legal_moves(position, piece.color()),
             PieceType::Knight => self.knight_pseudo_legal_moves(position, piece.color()),
             PieceType::Bishop => self.bishop_pseudo_legal_moves(position, piece.color()),
@@ -187,7 +187,9 @@ impl MoveGenerator<'_> {
                     board
                         .piece_at(&mov.to)
                         .filter(|piece| piece.color() != color)
-                        .map(|piece| Move::new(*position, mov.to, MoveType::Capture(piece.kind())))
+                        .map(|piece| {
+                            Move::new(*position, mov.to, MoveType::Capture(piece.piece_type()))
+                        })
                 }),
         );
 
@@ -217,7 +219,7 @@ impl MoveGenerator<'_> {
                                 result.push(Move::new(
                                     *position,
                                     new_pos,
-                                    MoveType::Capture(piece.kind()),
+                                    MoveType::Capture(piece.piece_type()),
                                 ));
                             }
                         } else {
@@ -239,7 +241,11 @@ impl MoveGenerator<'_> {
                 while let Some(pos) = new_pos {
                     if let Some(piece) = board.piece_at(&pos) {
                         if piece.color() != color {
-                            result.push(Move::new(*position, pos, MoveType::Capture(piece.kind())));
+                            result.push(Move::new(
+                                *position,
+                                pos,
+                                MoveType::Capture(piece.piece_type()),
+                            ));
                         }
                         break;
                     }
@@ -259,7 +265,11 @@ impl MoveGenerator<'_> {
             while let Some(pos) = new_pos {
                 if let Some(piece) = board.piece_at(&pos) {
                     if piece.color() != color {
-                        result.push(Move::new(*position, pos, MoveType::Capture(piece.kind())));
+                        result.push(Move::new(
+                            *position,
+                            pos,
+                            MoveType::Capture(piece.piece_type()),
+                        ));
                     }
                     break;
                 }
@@ -272,7 +282,11 @@ impl MoveGenerator<'_> {
             while let Some(pos) = new_pos {
                 if let Some(piece) = board.piece_at(&pos) {
                     if piece.color() != color {
-                        result.push(Move::new(*position, pos, MoveType::Capture(piece.kind())));
+                        result.push(Move::new(
+                            *position,
+                            pos,
+                            MoveType::Capture(piece.piece_type()),
+                        ));
                     }
                     break;
                 }
@@ -302,7 +316,7 @@ impl MoveGenerator<'_> {
                                 result.push(Move::new(
                                     *position,
                                     new_pos,
-                                    MoveType::Capture(piece.kind()),
+                                    MoveType::Capture(piece.piece_type()),
                                 ));
                             }
                         } else {
@@ -326,7 +340,7 @@ impl MoveGenerator<'_> {
             {
                 // Check if the rook is on the correct field
                 if let Some(piece) = board.piece_at(&Position::new_unchecked(7, root_rank)) {
-                    if piece.kind() == PieceType::Rook && piece.color() == color {
+                    if piece.piece_type() == PieceType::Rook && piece.color() == color {
                         result.push(Move::new(
                             *position,
                             Position::new_unchecked(6, root_rank),
@@ -347,7 +361,7 @@ impl MoveGenerator<'_> {
             {
                 // Check if the rook is on the correct field
                 if let Some(piece) = board.piece_at(&Position::new_unchecked(0, root_rank)) {
-                    if piece.kind() == PieceType::Rook && piece.color() == color {
+                    if piece.piece_type() == PieceType::Rook && piece.color() == color {
                         result.push(Move::new(
                             *position,
                             Position::new_unchecked(2, root_rank),

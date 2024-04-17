@@ -15,12 +15,12 @@ impl Piece {
         self.color
     }
 
-    pub fn kind(&self) -> PieceType {
+    pub fn piece_type(&self) -> PieceType {
         self.kind
     }
 
     pub fn get_print_char(&self) -> char {
-        match (self.kind(), self.color()) {
+        match (self.piece_type(), self.color()) {
             (crate::piece_type::PieceType::Pawn, crate::color::Color::White) => 'P',
             (crate::piece_type::PieceType::Pawn, crate::color::Color::Black) => 'p',
             (crate::piece_type::PieceType::Knight, crate::color::Color::White) => 'N',

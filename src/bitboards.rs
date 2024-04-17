@@ -40,7 +40,7 @@ impl GameBitBoards {
         for (position, piece) in game.board().iter() {
             let bitboard = 1 << position.board_index();
             if let Some(piece) = piece {
-                match (piece.kind(), piece.color()) {
+                match (piece.piece_type(), piece.color()) {
                     (PieceType::Pawn, Color::White) => this.white_pawns |= bitboard,
                     (PieceType::Knight, Color::White) => this.white_knights |= bitboard,
                     (PieceType::Bishop, Color::White) => this.white_bishops |= bitboard,
@@ -122,7 +122,7 @@ impl GameBitBoards {
 
                 if let Some(piece) = game.board().piece_at(&position) {
                     if piece.color() != color {
-                        if direction.2.contains(&piece.kind()) {
+                        if direction.2.contains(&piece.piece_type()) {
                             if count == 0 {
                                 checks.push(pinned);
                             } else if count == 1 {
