@@ -31,6 +31,7 @@ fn main() -> anyhow::Result<()> {
     println!("Running perf test with depth {}...", depth);
     game.print_pieces();
 
+    // Running perftests
     let mut perft = PerfTest::new(game, depth);
     let own_results = perft.run_perft();
     let stockfish_results = perft.run_stockfish()?;

@@ -34,15 +34,36 @@ impl MoveGenerator<'_> {
 
         let to_move_color = piece_to_move.color();
 
+        let enemy_attacks = self.game.bitboards().attacks(to_move_color.opposite());
+
         if let PieceType::King = piece_to_move.kind() {
             // Filter out when the king moves into check
-            if self
-                .game
-                .bitboards()
-                .attacks(to_move_color.opposite())
-                .contains(&mov.to)
-            {
+            if enemy_attacks.contains(&mov.to) {
                 return false;
+            }
+
+            // Check if the king is castling
+            if let MoveType::Castle = mov.move_type {
+                let root_rank = to_move_color.root_rank();
+                let castle_dir = mov.to.file() as i8 - mov.from.file() as i8;
+                let castle_dir = castle_dir / castle_dir.abs();
+
+                let all_to_check = [
+                    Position::new_unchecked(mov.from.file(), root_rank),
+                    Position::new_unchecked(
+                        mov.from.offset(castle_dir, 0).unwrap().file(),
+                        root_rank,
+                    ),
+                    Position::new_unchecked(
+                        mov.from.offset(castle_dir * 2, 0).unwrap().file(),
+                        root_rank,
+                    ),
+                ];
+
+                // Check if the kind is in check
+                if all_to_check.iter().any(|pos| enemy_attacks.contains(pos)) {
+                    return false;
+                }
             }
         }
 
