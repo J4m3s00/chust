@@ -90,12 +90,10 @@ impl PerfTest {
                     .parse::<u64>()
                     .unwrap();
                 stockfish_results.node_count = nodes;
-            } else {
-                if let Some((mov, nodes)) = line.split_once(':') {
-                    let nodes = nodes.trim();
-                    let nodes = nodes.parse::<u64>().unwrap();
-                    stockfish_results.nodes.insert(mov.trim().into(), nodes);
-                }
+            } else if let Some((mov, nodes)) = line.split_once(':') {
+                let nodes = nodes.trim();
+                let nodes = nodes.parse::<u64>().unwrap();
+                stockfish_results.nodes.insert(mov.trim().into(), nodes);
             }
         });
 

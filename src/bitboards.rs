@@ -315,30 +315,22 @@ impl BoardPrinter for BitBoardPrinter {
                 .bitboards()
                 .white_pinned
                 .iter()
-                .fold(Bitboard::default(), |acc, pinned| {
-                    Bitboard::from(acc | *pinned)
-                }),
+                .fold(Bitboard::default(), |acc, pinned| acc | *pinned),
             Self::BlackPinned => game
                 .bitboards()
                 .black_pinned
                 .iter()
-                .fold(Bitboard::default(), |acc, pinned| {
-                    Bitboard::from(acc | *pinned)
-                }),
+                .fold(Bitboard::default(), |acc, pinned| acc | *pinned),
             Self::WhiteBlockableChecks => game
                 .bitboards()
                 .white_blockable_check
                 .iter()
-                .fold(Bitboard::default(), |acc, pinned| {
-                    Bitboard::from(acc | *pinned)
-                }),
+                .fold(Bitboard::default(), |acc, pinned| acc | *pinned),
             Self::BlackBlockableChecks => game
                 .bitboards()
                 .black_blockable_check
                 .iter()
-                .fold(Bitboard::default(), |acc, pinned| {
-                    Bitboard::from(acc | *pinned)
-                }),
+                .fold(Bitboard::default(), |acc, pinned| acc | *pinned),
         };
 
         let is_occupied = bit_value & (1 << position.board_index()) != 0;

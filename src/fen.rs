@@ -42,7 +42,7 @@ impl Fen {
 
         fen.push(' ');
 
-        fen.push_str(&match game.current_turn() {
+        fen.push_str(match game.current_turn() {
             Color::White => "w",
             Color::Black => "b",
         });
@@ -72,11 +72,11 @@ impl Fen {
 
         fen.push(' ');
 
-        fen.push_str("0");
+        fen.push('0');
 
         fen.push(' ');
 
-        fen.push_str("1");
+        fen.push('1');
 
         fen
     }

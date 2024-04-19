@@ -342,17 +342,11 @@ impl CastleRights {
     }
 
     pub fn queen_side(&self) -> bool {
-        match self {
-            CastleRights::QueenSide | CastleRights::Both => true,
-            _ => false,
-        }
+        matches!(self, CastleRights::QueenSide | CastleRights::Both)
     }
 
     pub fn king_side(&self) -> bool {
-        match self {
-            CastleRights::KingSide | CastleRights::Both => true,
-            _ => false,
-        }
+        matches!(self, CastleRights::KingSide | CastleRights::Both)
     }
 
     pub fn to_string(&self, color: Color) -> &str {
