@@ -78,6 +78,7 @@ impl Game {
 
         // Reset en passent
         self.en_passent_field = None;
+
         match piece_to_move.piece_type() {
             PieceType::King => {
                 self.castle_rights_mut(self.current_turn).remove_both();
@@ -251,21 +252,29 @@ impl Game {
         self.white_castle_rights
     }
 
+    pub fn white_castle_rights_mut(&mut self) -> &mut CastleRights {
+        &mut self.white_castle_rights
+    }
+
     pub fn black_castle_rights(&self) -> CastleRights {
         self.black_castle_rights
     }
 
+    pub fn black_castle_rights_mut(&mut self) -> &mut CastleRights {
+        &mut self.black_castle_rights
+    }
+
     pub fn castle_rights(&self, color: Color) -> CastleRights {
         match color {
-            Color::White => self.white_castle_rights,
-            Color::Black => self.black_castle_rights,
+            Color::White => self.white_castle_rights(),
+            Color::Black => self.black_castle_rights(),
         }
     }
 
     pub fn castle_rights_mut(&mut self, color: Color) -> &mut CastleRights {
         match color {
-            Color::White => &mut self.white_castle_rights,
-            Color::Black => &mut self.black_castle_rights,
+            Color::White => self.white_castle_rights_mut(),
+            Color::Black => self.black_castle_rights_mut(),
         }
     }
 
@@ -581,5 +590,120 @@ mod tests {
             game.board().piece_at(&Position::from_str("e7").unwrap()),
             Some(&Piece::new(PieceType::Pawn, Color::White))
         );
+    }
+
+    #[test]
+    fn en_passent_capture() {
+        let mut game = Fen::parse_game("8/8/8/2Pp4/8/8/8/8 w - d6 0 1").unwrap();
+        game.make_move(Move::new(
+            Position::C5,
+            Position::D6,
+            MoveType::EnPassantCapture,
+        ))
+        .unwrap();
+        assert_eq!(
+            game.board().piece_at(&Position::D6),
+            Some(&Piece::new(PieceType::Pawn, Color::White))
+        );
+        assert_eq!(game.board().piece_at(&Position::D5), None);
+        assert_eq!(game.board().piece_at(&Position::C5), None);
+
+        game.unmake_move();
+        assert_eq!(game.board().piece_at(&Position::D6), None);
+        assert_eq!(
+            game.board().piece_at(&Position::D5),
+            Some(&Piece::new(PieceType::Pawn, Color::Black))
+        );
+        assert_eq!(
+            game.board().piece_at(&Position::C5),
+            Some(&Piece::new(PieceType::Pawn, Color::White))
+        );
+    }
+
+    #[test]
+    fn castle_rights() {
+        let rights = CastleRights::Both;
+        assert_eq!(rights.to_string(Color::White), "KQ");
+        assert_eq!(rights.to_string(Color::Black), "kq");
+
+        let rights = CastleRights::KingSide;
+        assert_eq!(rights.to_string(Color::White), "K");
+        assert_eq!(rights.to_string(Color::Black), "k");
+
+        let rights = CastleRights::QueenSide;
+        assert_eq!(rights.to_string(Color::White), "Q");
+        assert_eq!(rights.to_string(Color::Black), "q");
+
+        let rights = CastleRights::None;
+        assert_eq!(rights.to_string(Color::White), "-");
+        assert_eq!(rights.to_string(Color::Black), "-");
+
+        let mut rights = CastleRights::Both;
+        rights.remove_king_side();
+        assert_eq!(rights, CastleRights::QueenSide);
+        rights.remove_queen_side();
+        assert_eq!(rights, CastleRights::None);
+
+        let mut rights = CastleRights::Both;
+        rights.remove_queen_side();
+        assert_eq!(rights, CastleRights::KingSide);
+        rights.remove_king_side();
+        assert_eq!(rights, CastleRights::None);
+
+        let mut rights = CastleRights::Both;
+        rights.remove_both();
+        assert_eq!(rights, CastleRights::None);
+    }
+
+    #[test]
+    fn castle_rights_change_in_game() {
+        {
+            // White
+            let mut game =
+                Fen::parse_game("r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1").unwrap();
+            game.make_move(Move::new(Position::H1, Position::G1, MoveType::Quiet))
+                .unwrap();
+
+            assert_eq!(game.white_castle_rights(), CastleRights::QueenSide);
+            assert_eq!(game.black_castle_rights(), CastleRights::Both);
+            game.unmake_move();
+            assert_eq!(game.white_castle_rights(), CastleRights::Both);
+
+            game.make_move(Move::new(Position::A1, Position::B1, MoveType::Quiet))
+                .unwrap();
+            assert_eq!(game.white_castle_rights(), CastleRights::KingSide);
+            assert_eq!(game.black_castle_rights(), CastleRights::Both);
+
+            game.unmake_move();
+            assert_eq!(game.white_castle_rights(), CastleRights::Both);
+
+            game.make_move(Move::new(Position::E1, Position::D1, MoveType::Quiet))
+                .unwrap();
+            assert_eq!(game.white_castle_rights(), CastleRights::None);
+        }
+        {
+            // Black
+            let mut game =
+                Fen::parse_game("r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R b KQkq - 0 1").unwrap();
+            game.make_move(Move::new(Position::H8, Position::G8, MoveType::Quiet))
+                .unwrap();
+
+            assert_eq!(game.black_castle_rights(), CastleRights::QueenSide);
+            assert_eq!(game.white_castle_rights(), CastleRights::Both);
+            game.unmake_move();
+            assert_eq!(game.black_castle_rights(), CastleRights::Both);
+
+            game.make_move(Move::new(Position::A8, Position::B8, MoveType::Quiet))
+                .unwrap();
+            assert_eq!(game.black_castle_rights(), CastleRights::KingSide);
+            assert_eq!(game.white_castle_rights(), CastleRights::Both);
+
+            game.unmake_move();
+            assert_eq!(game.black_castle_rights(), CastleRights::Both);
+
+            game.make_move(Move::new(Position::E8, Position::D8, MoveType::Quiet))
+                .unwrap();
+            assert_eq!(game.black_castle_rights(), CastleRights::None);
+        }
     }
 }
