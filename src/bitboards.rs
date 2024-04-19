@@ -580,5 +580,11 @@ mod tests {
         assert_eq!(bitboards.rooks(Color::Black).inner(), 0b10000001 << 56);
         assert_eq!(bitboards.queens(Color::Black).inner(), 0b00001000 << 56);
         assert_eq!(bitboards.king(Color::Black), Position::E8);
+
+        assert_eq!(bitboards.pieces(Color::White).inner(), 0b1111111111111111);
+        assert_eq!(
+            bitboards.pieces(Color::Black).inner(),
+            0b1111111111111111 << 48
+        );
     }
 }
