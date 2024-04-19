@@ -1,7 +1,7 @@
 use crate::{
     color::Color,
     game::Game,
-    moves::{Move, MoveType},
+    moves::{Move, MoveType, PromotionType},
     piece_type::PieceType,
     position::Position,
 };
@@ -158,11 +158,35 @@ impl MoveGenerator<'_> {
         let board = self.game.board();
         let mut result = Vec::new();
         let direction = color.board_direction();
+        let opposite_root = color.opposite().root_rank();
 
         // Single step forward
         if let Some(new_pos) = position.offset(0, direction) {
             if board.piece_at(&new_pos).is_none() {
-                result.push(Move::new(*position, new_pos, MoveType::Quiet));
+                if new_pos.rank() == opposite_root {
+                    result.push(Move::new(
+                        *position,
+                        new_pos,
+                        MoveType::PromotionQuite(PromotionType::Queen),
+                    ));
+                    result.push(Move::new(
+                        *position,
+                        new_pos,
+                        MoveType::PromotionQuite(PromotionType::Rook),
+                    ));
+                    result.push(Move::new(
+                        *position,
+                        new_pos,
+                        MoveType::PromotionQuite(PromotionType::Knight),
+                    ));
+                    result.push(Move::new(
+                        *position,
+                        new_pos,
+                        MoveType::PromotionQuite(PromotionType::Bishop),
+                    ));
+                } else {
+                    result.push(Move::new(*position, new_pos, MoveType::Quiet));
+                }
 
                 // Double step forward
                 if position.rank() == color.pawn_rank() {
@@ -171,7 +195,7 @@ impl MoveGenerator<'_> {
                             result.push(Move::new(
                                 *position,
                                 new_pos,
-                                MoveType::EnPassant(position.offset(0, direction).unwrap()),
+                                MoveType::DoublePawnPush(position.offset(0, direction).unwrap()),
                             ));
                         }
                     }
@@ -188,10 +212,53 @@ impl MoveGenerator<'_> {
                         .piece_at(&mov.to)
                         .filter(|piece| piece.color() != color)
                         .map(|piece| {
-                            Move::new(*position, mov.to, MoveType::Capture(piece.piece_type()))
+                            if mov.to.rank() == opposite_root {
+                                vec![
+                                    Move::new(
+                                        *position,
+                                        mov.to,
+                                        MoveType::PromotionCapture(PromotionType::Queen, piece.piece_type()),
+                                    ),
+                                    Move::new(
+                                        *position,
+                                        mov.to,
+                                        MoveType::PromotionCapture(PromotionType::Rook, piece.piece_type()),
+                                    ),
+                                    Move::new(
+                                        *position,
+                                        mov.to,
+                                        MoveType::PromotionCapture(PromotionType::Knight, piece.piece_type()),
+                                    ),
+                                    Move::new(
+                                        *position,
+                                        mov.to,
+                                        MoveType::PromotionCapture(PromotionType::Bishop, piece.piece_type()),
+                                    ),
+                                ]
+                            } else {
+                                vec![Move::new(
+                                    *position,
+                                    mov.to,
+                                    MoveType::Capture(piece.piece_type()),
+                                )]
+                            }
                         })
-                }),
+                })
+                .flatten(),
         );
+
+        if let Some(en_passent) = self.game.en_passent_field() {
+            if let Some(new_pos) = position.offset(-1, direction) {
+                if new_pos == en_passent {
+                    result.push(Move::new(*position, en_passent, MoveType::EnPassantCapture));
+                }
+            }
+            if let Some(new_pos) = position.offset(1, direction) {
+                if new_pos == en_passent {
+                    result.push(Move::new(*position, en_passent, MoveType::EnPassantCapture));
+                }
+            }
+        }
 
         result
     }

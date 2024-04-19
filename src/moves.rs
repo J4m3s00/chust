@@ -14,8 +14,9 @@ pub enum PromotionType {
 pub enum MoveType {
     Quiet,
     Capture(PieceType),
+    EnPassantCapture,
     Castle,
-    EnPassant(Position),
+    DoublePawnPush(Position),
     PromotionQuite(PromotionType),
     PromotionCapture(PromotionType, PieceType),
 }

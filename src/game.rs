@@ -1,4 +1,4 @@
-use std::ops::BitOrAssign;
+use std::{io::Write, ops::BitOrAssign};
 
 use crate::{
     bitboards::GameBitBoards,
@@ -16,7 +16,7 @@ use crate::{
 pub struct Game {
     current_turn: Color,
     board: Board,
-    move_stack: Vec<(Move, CastleRights, CastleRights)>,
+    move_stack: Vec<(Move, CastleRights, CastleRights, Option<Position>)>,
     bitboards: GameBitBoards,
 
     white_castle_rights: CastleRights,
@@ -74,6 +74,10 @@ impl Game {
         // If rook or king moves, remove castle rights
         // Save castle rights for unmake_move
         let cur_castle_rights = (self.white_castle_rights, self.black_castle_rights);
+        let cur_en_passent = self.en_passent_field;
+
+        // Reset en passent
+        self.en_passent_field = None;
         match piece_to_move.piece_type() {
             PieceType::King => {
                 self.castle_rights_mut(self.current_turn).remove_both();
@@ -125,15 +129,25 @@ impl Game {
                     &mov.to,
                 );
             }
-            MoveType::EnPassant(pos) => {
+            MoveType::DoublePawnPush(pos) => {
                 self.board.make_move(&mov.from, &mov.to);
                 self.en_passent_field = Some(*pos);
+            }
+            MoveType::EnPassantCapture => {
+                self.board.make_move(&mov.from, &mov.to);
+                let direction = self.current_turn.board_direction();
+                self.board
+                    .remove_piece(&mov.to.offset(0, -direction).unwrap());
             }
             _ => self.board.make_move(&mov.from, &mov.to),
         }
 
-        self.move_stack
-            .push((mov, cur_castle_rights.0, cur_castle_rights.1));
+        self.move_stack.push((
+            mov,
+            cur_castle_rights.0,
+            cur_castle_rights.1,
+            cur_en_passent,
+        ));
         self.current_turn = self.current_turn.opposite();
 
         self.bitboards = GameBitBoards::new(self);
@@ -141,7 +155,7 @@ impl Game {
     }
 
     pub fn unmake_move(&mut self) {
-        let Some((mov, white_castle, black_castle)) = self.move_stack.pop() else {
+        let Some((mov, white_castle, black_castle, en_passent)) = self.move_stack.pop() else {
             println!("No moves to unmake.");
             return;
         };
@@ -199,12 +213,23 @@ impl Game {
             MoveType::Quiet => {
                 self.board.make_move(&mov.to, &mov.from);
             }
-            MoveType::EnPassant(_) => {
+            MoveType::DoublePawnPush(_) => {
                 self.board.make_move(&mov.to, &mov.from);
+            }
+            MoveType::EnPassantCapture => {
+                self.board.make_move(&mov.to, &mov.from);
+                let direction = self.current_turn.board_direction();
+
+                self.board.place_piece(
+                    Piece::new(PieceType::Pawn, self.current_turn),
+                    &mov.to.offset(0, direction).unwrap(),
+                );
             }
         }
         self.white_castle_rights = white_castle;
         self.black_castle_rights = black_castle;
+        self.en_passent_field = en_passent;
+
         self.current_turn = self.current_turn.opposite();
 
         self.bitboards = GameBitBoards::new(self);
@@ -246,6 +271,10 @@ impl Game {
 
     pub fn en_passent_field(&self) -> Option<Position> {
         self.en_passent_field
+    }
+
+    pub fn last_move(&self) -> Option<Move> {
+        self.move_stack.last().map(|(mov, _, _, _)| mov.clone())
     }
 
     /// # Example
@@ -368,7 +397,7 @@ mod tests {
         game.make_move(Move::new(
             Position::new_unchecked(3, 1),
             Position::new_unchecked(3, 3),
-            MoveType::EnPassant(Position::new_unchecked(3, 2)),
+            MoveType::DoublePawnPush(Position::new_unchecked(3, 2)),
         ))
         .unwrap();
         assert_eq!(game.current_turn(), Color::Black);
