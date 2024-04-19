@@ -538,8 +538,6 @@ impl MoveGenerator<'_> {
 
 #[cfg(test)]
 mod tests {
-    use std::str::FromStr;
-
     use super::*;
     use crate::{board::Board, fen::Fen, game::CastleRights, piece::Piece};
 
