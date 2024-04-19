@@ -47,6 +47,16 @@ impl Position {
         })
     }
 
+    pub fn rank_direction(&self, other: &Self) -> i8 {
+        let dx = other.x as i8 - self.x as i8;
+        dx / dx.abs()
+    }
+
+    pub fn file_direction(&self, other: &Self) -> i8 {
+        let dy = other.y as i8 - self.y as i8;
+        dy / dy.abs()
+    }
+
     pub fn file(&self) -> u8 {
         self.x
     }

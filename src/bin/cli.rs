@@ -1,6 +1,10 @@
 use anyhow::Context;
 use chust::{
-    bitboards::BitBoardPrinter, fen::Fen, game::Game, move_generation::MoveGenerator,
+    bitboards::BitBoardPrinter,
+    fen::Fen,
+    game::Game,
+    move_generation::MoveGenerator,
+    moves::{Move, MoveType},
     position::Position,
 };
 
@@ -47,25 +51,41 @@ fn main() -> anyhow::Result<()> {
                         }
                     });
                 }
-                "move" | "m" => {
-                    let from = rest
-                        .get(0..2)
-                        .context("Please provide a move in the format 'e2e4'")?
+                "show_attack" => {
+                    let position = rest
                         .parse::<Position>()
-                        .context("No valid first position given!")?;
-                    let to = rest
-                        .get(2..4)
-                        .context("Please provide a move in the format 'e2e4'")?
-                        .parse::<Position>()
-                        .context("No valid second position given!")?;
+                        .context("Please provide a position to show possible moves")?;
 
                     let generator = MoveGenerator::new(&game);
-                    let legal_moves = generator.pseudo_legal_moves(&from);
+                    let attacks = generator.possible_attacking_moves(&position);
+
+                    game.print_custom(|p: Position, _: &Game| {
+                        if attacks.iter().any(|m| m.to == p) {
+                            'X'
+                        } else {
+                            ' '
+                        }
+                    });
+                }
+                "move" | "m" => {
+                    let to_make = rest.parse::<Move>()?;
+
+                    let generator = MoveGenerator::new(&game);
+                    let legal_moves = generator.pseudo_legal_moves(&to_make.from);
                     let mov = legal_moves
-                        .into_iter()
-                        .find(|m| m.to == to)
-                        .context("Could not find valid move")?;
-                    let _ = game.make_move(mov);
+                        .iter()
+                        .find(|m| {
+                            let promotion_type = match (&to_make.move_type, &m.move_type) {
+                                (
+                                    MoveType::PromotionQuite(a),
+                                    MoveType::PromotionQuite(b) | MoveType::PromotionCapture(b, _),
+                                ) => a == b,
+                                _ => true,
+                            };
+                            promotion_type && m.to == to_make.to && m.from == to_make.from
+                        })
+                        .with_context(|| format!("Could not find valid move {:?}", legal_moves))?;
+                    let _ = game.make_move(mov.clone());
                     game.print_pieces();
                 }
                 "um" => {

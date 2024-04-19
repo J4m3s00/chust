@@ -42,8 +42,6 @@ impl FromStr for Move {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let from = Position::from_str(&s[0..2])?;
-        let to = Position::from_str(&s[2..4])?;
         let move_type = match s.len() {
             4 => MoveType::Quiet,
             5 => {
@@ -52,6 +50,8 @@ impl FromStr for Move {
             }
             _ => return Err(anyhow::anyhow!("Invalid move string")),
         };
+        let from = Position::from_str(&s[0..2])?;
+        let to = Position::from_str(&s[2..4])?;
         Ok(Move::new(from, to, move_type))
     }
 }
@@ -59,8 +59,8 @@ impl FromStr for Move {
 impl Display for Move {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let promotion = match &self.move_type {
-            MoveType::PromotionQuite(promotion) => format!("={}", promotion),
-            MoveType::PromotionCapture(promotion, _) => format!("={}", promotion),
+            MoveType::PromotionQuite(promotion) => format!("{}", promotion),
+            MoveType::PromotionCapture(promotion, _) => format!("{}", promotion),
             _ => "".to_string(),
         };
         write!(f, "{}{}{}", self.from, self.to, promotion)
@@ -70,10 +70,10 @@ impl Display for Move {
 impl Display for PromotionType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let promotion = match self {
-            PromotionType::Queen => "Q",
-            PromotionType::Rook => "R",
-            PromotionType::Bishop => "B",
-            PromotionType::Knight => "N",
+            PromotionType::Queen => "q",
+            PromotionType::Rook => "r",
+            PromotionType::Bishop => "b",
+            PromotionType::Knight => "n",
         };
         write!(f, "{}", promotion)
     }
@@ -84,10 +84,10 @@ impl FromStr for PromotionType {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "Q" => Ok(PromotionType::Queen),
-            "R" => Ok(PromotionType::Rook),
-            "B" => Ok(PromotionType::Bishop),
-            "N" => Ok(PromotionType::Knight),
+            "Q" | "q" => Ok(PromotionType::Queen),
+            "R" | "r" => Ok(PromotionType::Rook),
+            "B" | "b" => Ok(PromotionType::Bishop),
+            "N" | "n" => Ok(PromotionType::Knight),
             _ => Err(anyhow::anyhow!("Invalid promotion type")),
         }
     }

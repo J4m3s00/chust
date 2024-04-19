@@ -36,6 +36,14 @@ impl MoveGenerator<'_> {
 
         let enemy_attacks = self.game.bitboards().attacks(to_move_color.opposite());
 
+        // Check pins
+        let pinned = self.game.bitboards().pinned(to_move_color);
+        if let Some(pinned) = pinned.iter().find(|board| board.contains(&mov.from)) {
+            // The piece we move is pinned
+            // We can only move in the pin
+            return pinned.contains(&mov.to);
+        }
+
         // Check if we are in check and need to block. Moving out should be checked be the king movement
         let blockable_checks = self.game.bitboards().blockable_checks(to_move_color);
 
@@ -53,6 +61,7 @@ impl MoveGenerator<'_> {
                     return blockable.contains(&mov.to);
                 }
                 _ => {
+                    println!("{:?}", blockable_checks);
                     // We cant block, because more than one piece is attacking or we are attacked be a knight or pawn
                     return false;
                 }
@@ -103,12 +112,44 @@ impl MoveGenerator<'_> {
             }
         }
 
-        // Check pins
-        let pinned = self.game.bitboards().pinned(to_move_color);
-        if let Some(pinned) = pinned.iter().find(|board| board.contains(&mov.from)) {
-            // The piece we move is pinned
-            // We can only move in the pin
-            return pinned.contains(&mov.to);
+        // Special case for en passent when pawn is pinned be rook. This will not be caught by the pinned check
+        // See fen: 8/8/3p4/KPp4r/4Rp1k/8/4P1P1/8 w - c6 0 1
+        if let MoveType::EnPassantCapture = mov.move_type {
+            // Pawn can only be pinned by rook, thats why we just search the rooks
+            // Need updated pieces bitboard
+
+            // First we check if the king is even next to us
+            let king_pos = self.game.bitboards().king(to_move_color);
+            if king_pos.rank() == mov.from.rank() {
+                // Get side on which the pawn is
+                let pawn_dir = mov.from.rank_direction(&king_pos);
+                // King os next to us
+                for rook_pos in self.game.bitboards().rooks(to_move_color.opposite()).iter() {
+                    if rook_pos.rank() == mov.from.rank() {
+                        // Rook is on the same rank as the pawn
+                        // Check if the rook is pinning the pawn
+                        let rook_dir = rook_pos.rank_direction(&mov.from);
+                        if rook_dir == pawn_dir {
+                            // Rook is pinning the pawn
+                            // Check if the rook is between the king and the pawn
+                            let mut cur_pos = rook_pos;
+                            let mut found_pawns = 0;
+                            while cur_pos != king_pos && found_pawns <= 2 {
+                                if let Some(piece) = board.piece_at(&cur_pos) {
+                                    if piece.piece_type() == PieceType::Pawn {
+                                        found_pawns += 1;
+                                    }
+                                }
+                                cur_pos = cur_pos.offset(rook_dir, 0).unwrap();
+                            }
+
+                            if found_pawns == 2 {
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         true
@@ -128,11 +169,11 @@ impl MoveGenerator<'_> {
 
         match piece.piece_type() {
             PieceType::Pawn => self.pawn_possible_attacking_moves(position, piece.color()),
-            PieceType::Knight => self.knight_pseudo_legal_moves(position, piece.color()),
-            PieceType::Bishop => self.bishop_pseudo_legal_moves(position, piece.color()),
-            PieceType::Rook => self.rook_pseudo_legal_moves(position, piece.color()),
-            PieceType::Queen => self.queen_pseudo_legal_moves(position, piece.color()),
-            PieceType::King => self.king_pseudo_legal_moves(position, piece.color()),
+            PieceType::Knight => self.knight_pseudo_legal_moves(position, piece.color(), true),
+            PieceType::Bishop => self.bishop_pseudo_legal_moves(position, piece.color(), true),
+            PieceType::Rook => self.rook_pseudo_legal_moves(position, piece.color(), true),
+            PieceType::Queen => self.queen_pseudo_legal_moves(position, piece.color(), true),
+            PieceType::King => self.king_pseudo_legal_moves(position, piece.color(), true),
         }
     }
 
@@ -146,11 +187,11 @@ impl MoveGenerator<'_> {
 
         match piece.piece_type() {
             PieceType::Pawn => self.pawn_pseudo_legal_moves(position, piece.color()),
-            PieceType::Knight => self.knight_pseudo_legal_moves(position, piece.color()),
-            PieceType::Bishop => self.bishop_pseudo_legal_moves(position, piece.color()),
-            PieceType::Rook => self.rook_pseudo_legal_moves(position, piece.color()),
-            PieceType::Queen => self.queen_pseudo_legal_moves(position, piece.color()),
-            PieceType::King => self.king_pseudo_legal_moves(position, piece.color()),
+            PieceType::Knight => self.knight_pseudo_legal_moves(position, piece.color(), false),
+            PieceType::Bishop => self.bishop_pseudo_legal_moves(position, piece.color(), false),
+            PieceType::Rook => self.rook_pseudo_legal_moves(position, piece.color(), false),
+            PieceType::Queen => self.queen_pseudo_legal_moves(position, piece.color(), false),
+            PieceType::King => self.king_pseudo_legal_moves(position, piece.color(), false),
         }
     }
 
@@ -217,22 +258,34 @@ impl MoveGenerator<'_> {
                                     Move::new(
                                         *position,
                                         mov.to,
-                                        MoveType::PromotionCapture(PromotionType::Queen, piece.piece_type()),
+                                        MoveType::PromotionCapture(
+                                            PromotionType::Queen,
+                                            piece.piece_type(),
+                                        ),
                                     ),
                                     Move::new(
                                         *position,
                                         mov.to,
-                                        MoveType::PromotionCapture(PromotionType::Rook, piece.piece_type()),
+                                        MoveType::PromotionCapture(
+                                            PromotionType::Rook,
+                                            piece.piece_type(),
+                                        ),
                                     ),
                                     Move::new(
                                         *position,
                                         mov.to,
-                                        MoveType::PromotionCapture(PromotionType::Knight, piece.piece_type()),
+                                        MoveType::PromotionCapture(
+                                            PromotionType::Knight,
+                                            piece.piece_type(),
+                                        ),
                                     ),
                                     Move::new(
                                         *position,
                                         mov.to,
-                                        MoveType::PromotionCapture(PromotionType::Bishop, piece.piece_type()),
+                                        MoveType::PromotionCapture(
+                                            PromotionType::Bishop,
+                                            piece.piece_type(),
+                                        ),
                                     ),
                                 ]
                             } else {
@@ -274,7 +327,12 @@ impl MoveGenerator<'_> {
         res
     }
 
-    fn knight_pseudo_legal_moves(&self, position: &Position, color: Color) -> Vec<Move> {
+    fn knight_pseudo_legal_moves(
+        &self,
+        position: &Position,
+        color: Color,
+        friendly_attacks: bool,
+    ) -> Vec<Move> {
         let board = self.game.board();
         let mut result = Vec::new();
         for &dx in &[-2i8, -1, 1, 2] {
@@ -282,7 +340,7 @@ impl MoveGenerator<'_> {
                 if dx.abs() != dy.abs() {
                     if let Some(new_pos) = position.offset(dx, dy) {
                         if let Some(piece) = board.piece_at(&new_pos) {
-                            if piece.color() != color {
+                            if piece.color() != color || friendly_attacks {
                                 result.push(Move::new(
                                     *position,
                                     new_pos,
@@ -299,7 +357,12 @@ impl MoveGenerator<'_> {
         result
     }
 
-    fn bishop_pseudo_legal_moves(&self, position: &Position, color: Color) -> Vec<Move> {
+    fn bishop_pseudo_legal_moves(
+        &self,
+        position: &Position,
+        color: Color,
+        friendly_attacks: bool,
+    ) -> Vec<Move> {
         let board = self.game.board();
         let mut result = Vec::new();
         for &dx in &[-1, 1] {
@@ -307,14 +370,19 @@ impl MoveGenerator<'_> {
                 let mut new_pos = position.offset(dx, dy);
                 while let Some(pos) = new_pos {
                     if let Some(piece) = board.piece_at(&pos) {
-                        if piece.color() != color {
+                        if piece.color() != color || friendly_attacks {
                             result.push(Move::new(
                                 *position,
                                 pos,
                                 MoveType::Capture(piece.piece_type()),
                             ));
                         }
-                        break;
+                        if !friendly_attacks
+                            || (!matches!(piece.piece_type(), PieceType::King)
+                                || piece.color() == color)
+                        {
+                            break;
+                        }
                     }
                     result.push(Move::new(*position, pos, MoveType::Quiet));
                     new_pos = pos.offset(dx, dy);
@@ -324,21 +392,31 @@ impl MoveGenerator<'_> {
         result
     }
 
-    fn rook_pseudo_legal_moves(&self, position: &Position, color: Color) -> Vec<Move> {
+    fn rook_pseudo_legal_moves(
+        &self,
+        position: &Position,
+        color: Color,
+        friendly_attacks: bool,
+    ) -> Vec<Move> {
         let board = self.game.board();
         let mut result = Vec::new();
         for &dx in &[-1, 1] {
             let mut new_pos = position.offset(dx, 0);
             while let Some(pos) = new_pos {
                 if let Some(piece) = board.piece_at(&pos) {
-                    if piece.color() != color {
+                    if piece.color() != color || friendly_attacks {
                         result.push(Move::new(
                             *position,
                             pos,
                             MoveType::Capture(piece.piece_type()),
                         ));
                     }
-                    break;
+                    if !friendly_attacks
+                        || (!matches!(piece.piece_type(), PieceType::King)
+                            || piece.color() == color)
+                    {
+                        break;
+                    }
                 }
                 result.push(Move::new(*position, pos, MoveType::Quiet));
                 new_pos = pos.offset(dx, 0);
@@ -348,14 +426,19 @@ impl MoveGenerator<'_> {
             let mut new_pos = position.offset(0, dy);
             while let Some(pos) = new_pos {
                 if let Some(piece) = board.piece_at(&pos) {
-                    if piece.color() != color {
+                    if piece.color() != color || friendly_attacks {
                         result.push(Move::new(
                             *position,
                             pos,
                             MoveType::Capture(piece.piece_type()),
                         ));
                     }
-                    break;
+                    if !friendly_attacks
+                        || (!matches!(piece.piece_type(), PieceType::King)
+                            || piece.color() == color)
+                    {
+                        break;
+                    }
                 }
                 result.push(Move::new(*position, pos, MoveType::Quiet));
                 new_pos = pos.offset(0, dy);
@@ -364,14 +447,24 @@ impl MoveGenerator<'_> {
         result
     }
 
-    fn queen_pseudo_legal_moves(&self, position: &Position, color: Color) -> Vec<Move> {
+    fn queen_pseudo_legal_moves(
+        &self,
+        position: &Position,
+        color: Color,
+        friendly_attacks: bool,
+    ) -> Vec<Move> {
         let mut result = Vec::new();
-        result.extend(self.bishop_pseudo_legal_moves(position, color));
-        result.extend(self.rook_pseudo_legal_moves(position, color));
+        result.extend(self.bishop_pseudo_legal_moves(position, color, friendly_attacks));
+        result.extend(self.rook_pseudo_legal_moves(position, color, friendly_attacks));
         result
     }
 
-    fn king_pseudo_legal_moves(&self, position: &Position, color: Color) -> Vec<Move> {
+    fn king_pseudo_legal_moves(
+        &self,
+        position: &Position,
+        color: Color,
+        frindly_attacks: bool,
+    ) -> Vec<Move> {
         let board = self.game.board();
         let mut result = Vec::new();
         for &dx in &[-1, 0, 1] {
@@ -379,7 +472,7 @@ impl MoveGenerator<'_> {
                 if dx != 0 || dy != 0 {
                     if let Some(new_pos) = position.offset(dx, dy) {
                         if let Some(piece) = board.piece_at(&new_pos) {
-                            if piece.color() != color {
+                            if piece.color() != color || frindly_attacks {
                                 result.push(Move::new(
                                     *position,
                                     new_pos,
@@ -479,7 +572,7 @@ mod tests {
         let move_generator = MoveGenerator::new(&game);
 
         let knight = Position::new_unchecked(3, 3);
-        let moves = move_generator.knight_pseudo_legal_moves(&knight, Color::White);
+        let moves = move_generator.knight_pseudo_legal_moves(&knight, Color::White, false);
         assert_eq!(moves.len(), 8);
     }
 
@@ -495,7 +588,7 @@ mod tests {
         let move_generator = MoveGenerator::new(&game);
 
         let bishop = Position::new_unchecked(3, 3);
-        let moves = move_generator.bishop_pseudo_legal_moves(&bishop, Color::White);
+        let moves = move_generator.bishop_pseudo_legal_moves(&bishop, Color::White, false);
         assert_eq!(moves.len(), 13);
     }
 
@@ -511,7 +604,7 @@ mod tests {
         let move_generator = MoveGenerator::new(&game);
 
         let rook = Position::new_unchecked(3, 3);
-        let moves = move_generator.rook_pseudo_legal_moves(&rook, Color::White);
+        let moves = move_generator.rook_pseudo_legal_moves(&rook, Color::White, false);
         assert_eq!(moves.len(), 14);
     }
 
@@ -527,7 +620,7 @@ mod tests {
         let move_generator = MoveGenerator::new(&game);
 
         let queen = Position::new_unchecked(3, 3);
-        let moves = move_generator.queen_pseudo_legal_moves(&queen, Color::White);
+        let moves = move_generator.queen_pseudo_legal_moves(&queen, Color::White, false);
         assert_eq!(moves.len(), 27);
     }
 
@@ -543,7 +636,7 @@ mod tests {
         let move_generator = MoveGenerator::new(&game);
 
         let king = Position::new_unchecked(3, 3);
-        let moves = move_generator.king_pseudo_legal_moves(&king, Color::White);
+        let moves = move_generator.king_pseudo_legal_moves(&king, Color::White, false);
         assert_eq!(moves.len(), 8);
     }
 }

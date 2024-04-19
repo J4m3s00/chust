@@ -36,34 +36,7 @@ pub struct GameBitBoards {
 impl GameBitBoards {
     pub fn new(game: &Game) -> Self {
         let mut this = Self::default();
-
-        for (position, piece) in game.board().iter() {
-            let bitboard = 1 << position.board_index();
-            if let Some(piece) = piece {
-                match (piece.piece_type(), piece.color()) {
-                    (PieceType::Pawn, Color::White) => this.white_pawns |= bitboard,
-                    (PieceType::Knight, Color::White) => this.white_knights |= bitboard,
-                    (PieceType::Bishop, Color::White) => this.white_bishops |= bitboard,
-                    (PieceType::Rook, Color::White) => this.white_rooks |= bitboard,
-                    (PieceType::Queen, Color::White) => this.white_queens |= bitboard,
-                    (PieceType::Pawn, Color::Black) => this.black_pawns |= bitboard,
-                    (PieceType::Knight, Color::Black) => this.black_knights |= bitboard,
-                    (PieceType::Bishop, Color::Black) => this.black_bishops |= bitboard,
-                    (PieceType::Rook, Color::Black) => this.black_rooks |= bitboard,
-                    (PieceType::Queen, Color::Black) => this.black_queens |= bitboard,
-                    (PieceType::King, Color::White) => this.white_king = position,
-                    (PieceType::King, Color::Black) => this.black_king = position,
-                }
-                match piece.color() {
-                    Color::White => {
-                        this.white_pieces |= bitboard;
-                    }
-                    Color::Black => {
-                        this.black_pieces |= bitboard;
-                    }
-                }
-            }
-        }
+        this.generate_pieces(game);
 
         // Possible attacks
         let move_generator = MoveGenerator::new(game);
@@ -79,19 +52,44 @@ impl GameBitBoards {
         }
 
         // Pins
-        (this.white_pinned, this.white_blockable_check) =
-            this.generate_king_pins_and_checks(game, Color::White);
-        (this.black_pinned, this.black_blockable_check) =
-            this.generate_king_pins_and_checks(game, Color::Black);
+        this.generate_king_pins_and_checks(game, Color::White);
+        this.generate_king_pins_and_checks(game, Color::Black);
 
         this
     }
 
-    fn generate_king_pins_and_checks(
-        &self,
-        game: &Game,
-        color: Color,
-    ) -> (Vec<Bitboard>, Vec<Bitboard>) {
+    fn generate_pieces(&mut self, game: &Game) {
+        for (position, piece) in game.board().iter() {
+            let bitboard = 1 << position.board_index();
+            if let Some(piece) = piece {
+                match (piece.piece_type(), piece.color()) {
+                    (PieceType::Pawn, Color::White) => self.white_pawns |= bitboard,
+                    (PieceType::Knight, Color::White) => self.white_knights |= bitboard,
+                    (PieceType::Bishop, Color::White) => self.white_bishops |= bitboard,
+                    (PieceType::Rook, Color::White) => self.white_rooks |= bitboard,
+                    (PieceType::Queen, Color::White) => self.white_queens |= bitboard,
+                    (PieceType::Pawn, Color::Black) => self.black_pawns |= bitboard,
+                    (PieceType::Knight, Color::Black) => self.black_knights |= bitboard,
+                    (PieceType::Bishop, Color::Black) => self.black_bishops |= bitboard,
+                    (PieceType::Rook, Color::Black) => self.black_rooks |= bitboard,
+                    (PieceType::Queen, Color::Black) => self.black_queens |= bitboard,
+                    (PieceType::King, Color::White) => self.white_king = position,
+                    (PieceType::King, Color::Black) => self.black_king = position,
+                }
+                match piece.color() {
+                    Color::White => {
+                        self.white_pieces |= bitboard;
+                    }
+                    Color::Black => {
+                        self.black_pieces |= bitboard;
+                    }
+                }
+            }
+        }
+    }
+
+    // Needs to be genrated with a valid pieces bitboard
+    fn generate_king_pins_and_checks(&mut self, game: &Game, color: Color) {
         let king_position = match color {
             Color::White => self.white_king,
             Color::Black => self.black_king,
@@ -143,7 +141,30 @@ impl GameBitBoards {
             }
         }
 
-        (pins, checks)
+        // Find pawn and knight checks as well.
+        let move_generator = MoveGenerator::new(game);
+        for piece_position in self
+            .knights(color.opposite())
+            .iter()
+            .chain(self.pawns(color.opposite()).iter())
+        {
+            for attack in move_generator.possible_attacking_moves(&piece_position) {
+                if attack.to == king_position {
+                    checks.push(Bitboard::from(1 << attack.from.board_index()));
+                }
+            }
+        }
+
+        match color {
+            Color::White => {
+                self.white_pinned = pins;
+                self.white_blockable_check = checks;
+            }
+            Color::Black => {
+                self.black_pinned = pins;
+                self.black_blockable_check = checks;
+            }
+        }
     }
 
     // Helper functions to get correct bitboard
