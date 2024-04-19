@@ -20,7 +20,7 @@ impl BoardPrinter for DefaultBoardPrinter {
         let Some(piece) = game.board().piece_at(&position) else {
             return ' ';
         };
-        match (piece.kind(), piece.color()) {
+        match (piece.piece_type(), piece.color()) {
             (crate::piece_type::PieceType::Pawn, crate::color::Color::White) => 'P',
             (crate::piece_type::PieceType::Pawn, crate::color::Color::Black) => 'p',
             (crate::piece_type::PieceType::Knight, crate::color::Color::White) => 'N',
