@@ -59,8 +59,9 @@ impl FromStr for Move {
 impl Display for Move {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let promotion = match &self.move_type {
-            MoveType::PromotionQuite(promotion) => format!("{}", promotion),
-            MoveType::PromotionCapture(promotion, _) => format!("{}", promotion),
+            MoveType::PromotionQuite(promotion) | MoveType::PromotionCapture(promotion, _) => {
+                format!("{}", promotion)
+            }
             _ => "".to_string(),
         };
         write!(f, "{}{}{}", self.from, self.to, promotion)
