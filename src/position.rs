@@ -11,6 +11,8 @@ pub struct Position {
 }
 
 impl Position {
+    /// Creates a new position
+    /// Returns None if the position is out of bounds
     pub fn new(x: u8, y: u8) -> Option<Self> {
         (x < 8 && y < 8).then_some(Self { x, y })
     }
@@ -64,6 +66,78 @@ impl Position {
     pub fn rank(&self) -> u8 {
         self.y
     }
+
+    pub const A1: Self = Self { x: 0, y: 0 };
+    pub const B1: Self = Self { x: 1, y: 0 };
+    pub const C1: Self = Self { x: 2, y: 0 };
+    pub const D1: Self = Self { x: 3, y: 0 };
+    pub const E1: Self = Self { x: 4, y: 0 };
+    pub const F1: Self = Self { x: 5, y: 0 };
+    pub const G1: Self = Self { x: 6, y: 0 };
+    pub const H1: Self = Self { x: 7, y: 0 };
+
+    pub const A2: Self = Self { x: 0, y: 1 };
+    pub const B2: Self = Self { x: 1, y: 1 };
+    pub const C2: Self = Self { x: 2, y: 1 };
+    pub const D2: Self = Self { x: 3, y: 1 };
+    pub const E2: Self = Self { x: 4, y: 1 };
+    pub const F2: Self = Self { x: 5, y: 1 };
+    pub const G2: Self = Self { x: 6, y: 1 };
+    pub const H2: Self = Self { x: 7, y: 1 };
+
+    pub const A3: Self = Self { x: 0, y: 2 };
+    pub const B3: Self = Self { x: 1, y: 2 };
+    pub const C3: Self = Self { x: 2, y: 2 };
+    pub const D3: Self = Self { x: 3, y: 2 };
+    pub const E3: Self = Self { x: 4, y: 2 };
+    pub const F3: Self = Self { x: 5, y: 2 };
+    pub const G3: Self = Self { x: 6, y: 2 };
+    pub const H3: Self = Self { x: 7, y: 2 };
+
+    pub const A4: Self = Self { x: 0, y: 3 };
+    pub const B4: Self = Self { x: 1, y: 3 };
+    pub const C4: Self = Self { x: 2, y: 3 };
+    pub const D4: Self = Self { x: 3, y: 3 };
+    pub const E4: Self = Self { x: 4, y: 3 };
+    pub const F4: Self = Self { x: 5, y: 3 };
+    pub const G4: Self = Self { x: 6, y: 3 };
+    pub const H4: Self = Self { x: 7, y: 3 };
+
+    pub const A5: Self = Self { x: 0, y: 4 };
+    pub const B5: Self = Self { x: 1, y: 4 };
+    pub const C5: Self = Self { x: 2, y: 4 };
+    pub const D5: Self = Self { x: 3, y: 4 };
+    pub const E5: Self = Self { x: 4, y: 4 };
+    pub const F5: Self = Self { x: 5, y: 4 };
+    pub const G5: Self = Self { x: 6, y: 4 };
+    pub const H5: Self = Self { x: 7, y: 4 };
+
+    pub const A6: Self = Self { x: 0, y: 5 };
+    pub const B6: Self = Self { x: 1, y: 5 };
+    pub const C6: Self = Self { x: 2, y: 5 };
+    pub const D6: Self = Self { x: 3, y: 5 };
+    pub const E6: Self = Self { x: 4, y: 5 };
+    pub const F6: Self = Self { x: 5, y: 5 };
+    pub const G6: Self = Self { x: 6, y: 5 };
+    pub const H6: Self = Self { x: 7, y: 5 };
+
+    pub const A7: Self = Self { x: 0, y: 6 };
+    pub const B7: Self = Self { x: 1, y: 6 };
+    pub const C7: Self = Self { x: 2, y: 6 };
+    pub const D7: Self = Self { x: 3, y: 6 };
+    pub const E7: Self = Self { x: 4, y: 6 };
+    pub const F7: Self = Self { x: 5, y: 6 };
+    pub const G7: Self = Self { x: 6, y: 6 };
+    pub const H7: Self = Self { x: 7, y: 6 };
+
+    pub const A8: Self = Self { x: 0, y: 7 };
+    pub const B8: Self = Self { x: 1, y: 7 };
+    pub const C8: Self = Self { x: 2, y: 7 };
+    pub const D8: Self = Self { x: 3, y: 7 };
+    pub const E8: Self = Self { x: 4, y: 7 };
+    pub const F8: Self = Self { x: 5, y: 7 };
+    pub const G8: Self = Self { x: 6, y: 7 };
+    pub const H8: Self = Self { x: 7, y: 7 };
 }
 
 impl Display for Position {

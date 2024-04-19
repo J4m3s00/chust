@@ -538,8 +538,10 @@ impl MoveGenerator<'_> {
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use super::*;
-    use crate::{board::Board, game::CastleRights};
+    use crate::{board::Board, fen::Fen, game::CastleRights, piece::Piece};
 
     #[test]
     fn test_pawn_pseudo_legal_moves() {
@@ -562,24 +564,37 @@ mod tests {
 
     #[test]
     fn test_knight_pseudo_legal_moves() {
+        let knight_position = Position::new_unchecked(3, 3);
+        let mut board = Board::default();
+        board.place_piece(
+            Piece::new(PieceType::Knight, Color::White),
+            &knight_position,
+        );
+
         let game = Game::new(
-            Board::default(),
+            board,
             Color::White,
             CastleRights::Both,
             CastleRights::Both,
             None,
         );
-        let move_generator = MoveGenerator::new(&game);
 
-        let knight = Position::new_unchecked(3, 3);
-        let moves = move_generator.knight_pseudo_legal_moves(&knight, Color::White, false);
+        let move_generator = MoveGenerator::new(&game);
+        let moves = move_generator.pseudo_legal_moves(&knight_position);
         assert_eq!(moves.len(), 8);
     }
 
     #[test]
     fn test_bishop_pseudo_legal_moves() {
+        let bishop_position = Position::new_unchecked(3, 3);
+        let mut board = Board::default();
+        board.place_piece(
+            Piece::new(PieceType::Bishop, Color::White),
+            &bishop_position,
+        );
+
         let game = Game::new(
-            Board::default(),
+            board,
             Color::White,
             CastleRights::Both,
             CastleRights::Both,
@@ -587,15 +602,19 @@ mod tests {
         );
         let move_generator = MoveGenerator::new(&game);
 
-        let bishop = Position::new_unchecked(3, 3);
-        let moves = move_generator.bishop_pseudo_legal_moves(&bishop, Color::White, false);
+        let moves = move_generator.pseudo_legal_moves(&bishop_position);
         assert_eq!(moves.len(), 13);
     }
 
     #[test]
     fn test_rook_pseudo_legal_moves() {
+        let rook_position = Position::new_unchecked(3, 3);
+
+        let mut board = Board::default();
+        board.place_piece(Piece::new(PieceType::Rook, Color::White), &rook_position);
+
         let game = Game::new(
-            Board::default(),
+            board,
             Color::White,
             CastleRights::Both,
             CastleRights::Both,
@@ -603,15 +622,19 @@ mod tests {
         );
         let move_generator = MoveGenerator::new(&game);
 
-        let rook = Position::new_unchecked(3, 3);
-        let moves = move_generator.rook_pseudo_legal_moves(&rook, Color::White, false);
+        let moves = move_generator.pseudo_legal_moves(&rook_position);
         assert_eq!(moves.len(), 14);
     }
 
     #[test]
     fn test_queen_pseudo_legal_moves() {
+        let queen_position = Position::new_unchecked(3, 3);
+
+        let mut board = Board::default();
+        board.place_piece(Piece::new(PieceType::Queen, Color::White), &queen_position);
+
         let game = Game::new(
-            Board::default(),
+            board,
             Color::White,
             CastleRights::Both,
             CastleRights::Both,
@@ -619,15 +642,19 @@ mod tests {
         );
         let move_generator = MoveGenerator::new(&game);
 
-        let queen = Position::new_unchecked(3, 3);
-        let moves = move_generator.queen_pseudo_legal_moves(&queen, Color::White, false);
+        let moves = move_generator.pseudo_legal_moves(&queen_position);
         assert_eq!(moves.len(), 27);
     }
 
     #[test]
     fn test_king_pseudo_legal_moves() {
+        let king_position = Position::new_unchecked(3, 3);
+
+        let mut board = Board::default();
+        board.place_piece(Piece::new(PieceType::King, Color::White), &king_position);
+
         let game = Game::new(
-            Board::default(),
+            board,
             Color::White,
             CastleRights::Both,
             CastleRights::Both,
@@ -635,8 +662,81 @@ mod tests {
         );
         let move_generator = MoveGenerator::new(&game);
 
-        let king = Position::new_unchecked(3, 3);
-        let moves = move_generator.king_pseudo_legal_moves(&king, Color::White, false);
+        let moves = move_generator.pseudo_legal_moves(&king_position);
         assert_eq!(moves.len(), 8);
+    }
+
+    #[test]
+    fn legal_move_pin() {
+        let fen = "8/8/3p4/K1pP3r/4Rp1k/8/4P1P1/8 b - c6 0 1";
+
+        test_legal_moves(fen, 0, &&Position::F4);
+    }
+
+    #[test]
+    fn legal_move_dont_move_in_check() {
+        let fen = "8/8/3p4/K1pP3r/4Rp1k/8/4P1P1/8 b - c6 0 1";
+
+        test_legal_moves(fen, 3, &Position::H4);
+    }
+
+    #[test]
+    fn legal_special_en_passant() {
+        let fen = "8/8/3p4/K1pP3r/4Rp1k/8/4P1P1/8 b - c6 0 1";
+        test_legal_moves(fen, 0, &Position::D5);
+    }
+
+    #[test]
+    fn legal_promotions() {
+        let fen = "2n5/3P4/8/8/8/8/8/8 w - - 0 1";
+        test_legal_moves(fen, 8, &Position::D7);
+    }
+
+    #[test]
+    fn legal_move_in_check() {
+        let fen = "8/8/3p4/K1pP3r/4R2k/5p2/4P1P1/8 b - - 0 1";
+
+        test_legal_moves(fen, 2, &Position::H4);
+    }
+    #[test]
+    fn legal_casteling() {
+        {
+            // Normal and with through check
+            let fen = "5r2/8/8/8/8/8/8/R3K2R w KQ - 0 1";
+
+            test_legal_moves(fen, 4, &Position::E1);
+        }
+        {
+            // No castle rights
+            let fen = "8/8/8/8/8/8/8/R3K2R w - - 0 1";
+
+            test_legal_moves(fen, 5, &Position::E1);
+        }
+    }
+    #[test]
+    fn blockable_checks() {
+        {
+            // Rook
+            let fen = "2n1r3/3P4/8/8/8/3N4/8/4K3 b - - 0 1";
+
+            test_legal_moves(fen, 1, &Position::D3);
+        }
+        {
+            // Bishop
+            let fen = "2n5/3P4/8/8/7b/3N4/8/4K3 b - - 0 1";
+            test_legal_moves(fen, 1, &Position::D3);
+        }
+        {
+            // Both
+            let fen = "2n1r3/3P4/8/8/7b/3N4/8/4K3 b - - 0 1";
+            test_legal_moves(fen, 0, &Position::D3);
+        }
+    }
+
+    fn test_legal_moves(fen: &str, expected_moves: usize, piece_to_check: &Position) {
+        let game = Fen::parse_game(fen).unwrap();
+        let move_generator = MoveGenerator::new(&game);
+        let legal_moves = move_generator.legal_moves(piece_to_check);
+        assert_eq!(legal_moves.len(), expected_moves);
     }
 }
