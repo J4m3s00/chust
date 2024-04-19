@@ -215,5 +215,20 @@ mod tests {
         assert_eq!(pos.file(), 7);
         let pos = Position::from_str("i9");
         assert!(pos.is_err());
+        let pos = Position::from_str("e33");
+        assert!(pos.is_err());
+    }
+
+    #[test]
+    fn test_direction() {
+        let pos1 = Position::new_unchecked(0, 0);
+        let pos2 = Position::new_unchecked(1, 1);
+        assert_eq!(pos1.rank_direction(&pos2), 1);
+        assert_eq!(pos1.file_direction(&pos2), 1);
+
+        let pos1 = Position::new_unchecked(1, 1);
+        let pos2 = Position::new_unchecked(0, 0);
+        assert_eq!(pos1.rank_direction(&pos2), -1);
+        assert_eq!(pos1.file_direction(&pos2), -1);
     }
 }

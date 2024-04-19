@@ -136,8 +136,8 @@ mod tests {
         );
         assert_eq!(Move::from_str(move_str).unwrap(), expected_move);
 
-        assert_eq!("e7e8j".parse::<Move>().is_err(), true);
-        assert_eq!("asgldf".parse::<Move>().is_err(), true);
+        assert!("e7e8j".parse::<Move>().is_err());
+        assert!("asgldf".parse::<Move>().is_err());
     }
 
     #[test]
