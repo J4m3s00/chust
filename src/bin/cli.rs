@@ -1,10 +1,13 @@
 use anyhow::Context;
 use chust::{
     bitboards::BitBoardPrinter,
+    color::Color,
     fen::Fen,
     game::Game,
     move_generation::MoveGenerator,
     moves::{Move, MoveType},
+    play_game::{self, PlayGame},
+    players::{bot_random::BotRandom, player_cli::CliPlayer},
     position::Position,
 };
 
@@ -87,6 +90,42 @@ fn main() -> anyhow::Result<()> {
                         .with_context(|| format!("Could not find valid move {:?}", legal_moves))?;
                     let _ = game.make_move(mov.clone());
                     game.print_pieces();
+                }
+                "start" => {
+                    let playing_game = PlayGame::new();
+                    let playing_game = playing_game
+                        .connect_player(Box::new(CliPlayer), Color::White)
+                        .expect_waiting();
+                    let playing_game = playing_game
+                        .connect_player(Box::new(BotRandom), Color::Black)
+                        .expect_ready();
+
+                    let to_play = Fen::parse_game(&Fen::from_game(&game)).unwrap();
+
+                    let mut playing_game = playing_game.start(to_play);
+
+                    loop {
+                        match playing_game.wait_for_move() {
+                            play_game::TurnResult::Checkmate => {
+                                println!("Checkmate!");
+                                break;
+                            }
+                            play_game::TurnResult::Stalemate => {
+                                println!("Draw!");
+                                break;
+                            }
+                            play_game::TurnResult::InProgress => {
+                                playing_game.game().print_pieces();
+                            }
+                            play_game::TurnResult::PlayerNotMakingMoves => {
+                                println!(
+                                    "Failed to make progress. Player {:?} is not making any moves!",
+                                    playing_game.game().current_turn()
+                                );
+                                break;
+                            }
+                        }
+                    }
                 }
                 "um" => {
                     game.unmake_move();

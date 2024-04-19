@@ -18,6 +18,16 @@ impl<'a> MoveGenerator<'a> {
 
 // Legal moves
 impl MoveGenerator<'_> {
+    pub fn all_legal_moves(&self, color: Color) -> Vec<Move> {
+        self.game
+            .bitboards()
+            .pieces(color)
+            .iter()
+            .map(|position| self.legal_moves(&position))
+            .flatten()
+            .collect()
+    }
+
     /// Returns all legal moves for a piece at the given position.
     pub fn legal_moves(&self, position: &Position) -> Vec<Move> {
         self.pseudo_legal_moves(position)
