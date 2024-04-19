@@ -36,3 +36,49 @@ impl Piece {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn get_char() {
+        use crate::color::Color;
+        use crate::piece::Piece;
+        use crate::piece_type::PieceType;
+
+        let piece = Piece::new(PieceType::Pawn, Color::White);
+        assert_eq!(piece.get_print_char(), 'P');
+
+        let piece = Piece::new(PieceType::Pawn, Color::Black);
+        assert_eq!(piece.get_print_char(), 'p');
+
+        let piece = Piece::new(PieceType::Knight, Color::White);
+        assert_eq!(piece.get_print_char(), 'N');
+
+        let piece = Piece::new(PieceType::Knight, Color::Black);
+        assert_eq!(piece.get_print_char(), 'n');
+
+        let piece = Piece::new(PieceType::Bishop, Color::White);
+        assert_eq!(piece.get_print_char(), 'B');
+
+        let piece = Piece::new(PieceType::Bishop, Color::Black);
+        assert_eq!(piece.get_print_char(), 'b');
+
+        let piece = Piece::new(PieceType::Rook, Color::White);
+        assert_eq!(piece.get_print_char(), 'R');
+
+        let piece = Piece::new(PieceType::Rook, Color::Black);
+        assert_eq!(piece.get_print_char(), 'r');
+
+        let piece = Piece::new(PieceType::Queen, Color::White);
+        assert_eq!(piece.get_print_char(), 'Q');
+
+        let piece = Piece::new(PieceType::Queen, Color::Black);
+        assert_eq!(piece.get_print_char(), 'q');
+
+        let piece = Piece::new(PieceType::King, Color::White);
+        assert_eq!(piece.get_print_char(), 'K');
+
+        let piece = Piece::new(PieceType::King, Color::Black);
+        assert_eq!(piece.get_print_char(), 'k');
+    }
+}
