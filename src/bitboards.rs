@@ -293,6 +293,7 @@ impl BitBoardPrinter {
 }
 
 impl BoardPrinter for BitBoardPrinter {
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn get_char(&self, position: crate::position::Position, game: &Game) -> char {
         let bit_value = match self {
             Self::WhitePawns => game.bitboards().white_pawns,
@@ -434,5 +435,150 @@ impl Not for Bitboard {
 
     fn not(self) -> Self::Output {
         !self.0
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::fen::Fen;
+
+    use super::*;
+
+    #[test]
+    fn test_iter() {
+        let bitboard = Bitboard(0b1010101010101010);
+        let positions: Vec<Position> = bitboard.iter().collect();
+        assert_eq!(positions.len(), 8);
+        assert!(positions.contains(&Position::from_board_index_unchecked(1)));
+        assert!(positions.contains(&Position::from_board_index_unchecked(3)));
+        assert!(positions.contains(&Position::from_board_index_unchecked(5)));
+        assert!(positions.contains(&Position::from_board_index_unchecked(7)));
+        assert!(positions.contains(&Position::from_board_index_unchecked(9)));
+        assert!(positions.contains(&Position::from_board_index_unchecked(11)));
+        assert!(positions.contains(&Position::from_board_index_unchecked(13)));
+        assert!(positions.contains(&Position::from_board_index_unchecked(15)));
+    }
+
+    #[test]
+    fn test_contains() {
+        let bitboard = Bitboard(0b1010101010101010);
+        assert!(bitboard.contains(&Position::from_board_index_unchecked(1)));
+        assert!(!bitboard.contains(&Position::from_board_index_unchecked(2)));
+        assert!(bitboard.contains(&Position::from_board_index_unchecked(3)));
+        assert!(!bitboard.contains(&Position::from_board_index_unchecked(4)));
+        assert!(bitboard.contains(&Position::from_board_index_unchecked(5)));
+        assert!(!bitboard.contains(&Position::from_board_index_unchecked(6)));
+        assert!(bitboard.contains(&Position::from_board_index_unchecked(7)));
+        assert!(!bitboard.contains(&Position::from_board_index_unchecked(8)));
+    }
+
+    #[test]
+    fn test_inner() {
+        let bitboard = Bitboard(0b1010101010101010);
+        assert_eq!(bitboard.inner(), 0b1010101010101010);
+    }
+
+    #[test]
+    fn test_from_u64() {
+        let bitboard: Bitboard = 0b1010101010101010.into();
+        assert_eq!(bitboard.inner(), 0b1010101010101010);
+    }
+
+    #[test]
+    fn test_from_position() {
+        let position = Position::from_board_index_unchecked(3);
+        let bitboard: Bitboard = position.into();
+        assert_eq!(bitboard.inner(), 0b1000);
+    }
+
+    #[test]
+    fn test_bitor_u64() {
+        let bitboard = Bitboard(0b1010101010101010);
+        let result = bitboard.bitor(0b0101010101010101);
+        assert_eq!(result, 0b1111111111111111);
+    }
+
+    #[test]
+    fn test_bitor_bitboard() {
+        let bitboard1 = Bitboard(0b1010101010101010);
+        let bitboard2 = Bitboard(0b0101010101010101);
+        let result = bitboard1.bitor(bitboard2);
+        assert_eq!(result.inner(), 0b1111111111111111);
+    }
+
+    #[test]
+    fn test_bitor_assign_u64() {
+        let mut bitboard = Bitboard(0b1010101010101010);
+        bitboard.bitor_assign(0b0101010101010101);
+        assert_eq!(bitboard.inner(), 0b1111111111111111);
+    }
+
+    #[test]
+    fn test_bitor_assign_bitboard() {
+        let mut bitboard1 = Bitboard(0b1010101010101010);
+        let bitboard2 = Bitboard(0b0101010101010101);
+        bitboard1.bitor_assign(bitboard2);
+        assert_eq!(bitboard1.inner(), 0b1111111111111111);
+    }
+
+    #[test]
+    fn test_bitand_u64() {
+        let bitboard = Bitboard(0b1010101010101010);
+        let result = bitboard.bitand(0b0101010101010101);
+        assert_eq!(result, 0b0);
+    }
+
+    #[test]
+    fn test_bitand_bitboard() {
+        let bitboard1 = Bitboard(0b1010101010101010);
+        let bitboard2 = Bitboard(0b0101010101010101);
+        let result = bitboard1.bitand(bitboard2);
+        assert_eq!(result.inner(), 0b0);
+    }
+
+    #[test]
+    fn test_bitand_assign_u64() {
+        let mut bitboard = Bitboard(0b1010101010101010);
+        bitboard.bitand_assign(0b0101010101010101);
+        assert_eq!(bitboard.inner(), 0b0);
+    }
+
+    #[test]
+    fn test_bitand_assign_bitboard() {
+        let mut bitboard1 = Bitboard(0b1010101010101010);
+        let bitboard2 = Bitboard(0b0101010101010101);
+        bitboard1.bitand_assign(bitboard2);
+        assert_eq!(bitboard1.inner(), 0b0);
+    }
+
+    #[test]
+    fn test_not() {
+        let bitboard = Bitboard(0b1010101010101010);
+        let result = !bitboard;
+        assert_eq!(
+            result,
+            0b1111111111111111111111111111111111111111111111110101010101010101
+        );
+    }
+
+    #[test]
+    fn test_the_pieces() {
+        let game =
+            Fen::parse_game("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap();
+        let bitboards = GameBitBoards::new(&game);
+
+        assert_eq!(bitboards.pawns(Color::White).inner(), 0b1111111100000000);
+        assert_eq!(bitboards.knights(Color::White).inner(), 0b01000010);
+        assert_eq!(bitboards.bishops(Color::White).inner(), 0b00100100);
+        assert_eq!(bitboards.rooks(Color::White).inner(), 0b10000001);
+        assert_eq!(bitboards.queens(Color::White).inner(), 0b00001000);
+        assert_eq!(bitboards.king(Color::White), Position::E1);
+
+        assert_eq!(bitboards.pawns(Color::Black).inner(), 0b11111111 << 48);
+        assert_eq!(bitboards.knights(Color::Black).inner(), 0b01000010 << 56);
+        assert_eq!(bitboards.bishops(Color::Black).inner(), 0b00100100 << 56);
+        assert_eq!(bitboards.rooks(Color::Black).inner(), 0b10000001 << 56);
+        assert_eq!(bitboards.queens(Color::Black).inner(), 0b00001000 << 56);
+        assert_eq!(bitboards.king(Color::Black), Position::E8);
     }
 }
