@@ -359,4 +359,24 @@ mod tests {
 
         assert_eq!(game, expected_game);
     }
+
+    #[test]
+    fn test_to_fen() {
+        let parse_fen = "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1";
+        let game = Fen::parse_game(parse_fen).unwrap();
+        let fen = Fen::from_game(&game);
+        assert_eq!(fen, parse_fen);
+    }
+
+    #[test]
+    fn unknown_turn_color() {
+        let game = Fen::parse_game("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR x KQkq - 0 1");
+        assert!(game.is_err());
+    }
+
+    #[test]
+    fn unknown_castle_rights() {
+        let game = Fen::parse_game("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w x - 0 1");
+        assert!(game.is_err());
+    }
 }
