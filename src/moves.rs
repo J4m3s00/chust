@@ -92,3 +92,86 @@ impl FromStr for PromotionType {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::str::FromStr;
+
+    #[test]
+    fn test_move_from_str() {
+        use super::{Move, MoveType, Position};
+        let move_str = "e2e4";
+        let expected_move = Move::new(Position::E2, Position::E4, MoveType::Quiet);
+        assert_eq!(Move::from_str(move_str).unwrap(), expected_move);
+
+        let move_str = "e7e8q";
+        let expected_move = Move::new(
+            Position::E7,
+            Position::E8,
+            MoveType::PromotionQuite(super::PromotionType::Queen),
+        );
+        assert_eq!(Move::from_str(move_str).unwrap(), expected_move);
+
+        let move_str = "e7e8r";
+        let expected_move = Move::new(
+            Position::E7,
+            Position::E8,
+            MoveType::PromotionQuite(super::PromotionType::Rook),
+        );
+        assert_eq!(Move::from_str(move_str).unwrap(), expected_move);
+
+        let move_str = "e7e8b";
+        let expected_move = Move::new(
+            Position::E7,
+            Position::E8,
+            MoveType::PromotionQuite(super::PromotionType::Bishop),
+        );
+        assert_eq!(Move::from_str(move_str).unwrap(), expected_move);
+
+        let move_str = "e7e8n";
+        let expected_move = Move::new(
+            Position::E7,
+            Position::E8,
+            MoveType::PromotionQuite(super::PromotionType::Knight),
+        );
+        assert_eq!(Move::from_str(move_str).unwrap(), expected_move);
+
+        assert_eq!("e7e8j".parse::<Move>().is_err(), true);
+        assert_eq!("asgldf".parse::<Move>().is_err(), true);
+    }
+
+    #[test]
+    fn test_move_to_string() {
+        use super::{Move, MoveType, Position};
+        let mov = Move::new(Position::E2, Position::E4, MoveType::Quiet);
+        assert_eq!(mov.to_string(), "e2e4");
+
+        let mov = Move::new(
+            Position::E7,
+            Position::E8,
+            MoveType::PromotionQuite(super::PromotionType::Queen),
+        );
+        assert_eq!(mov.to_string(), "e7e8q");
+
+        let mov = Move::new(
+            Position::E7,
+            Position::E8,
+            MoveType::PromotionQuite(super::PromotionType::Rook),
+        );
+        assert_eq!(mov.to_string(), "e7e8r");
+
+        let mov = Move::new(
+            Position::E7,
+            Position::E8,
+            MoveType::PromotionQuite(super::PromotionType::Bishop),
+        );
+        assert_eq!(mov.to_string(), "e7e8b");
+
+        let mov = Move::new(
+            Position::E7,
+            Position::E8,
+            MoveType::PromotionQuite(super::PromotionType::Knight),
+        );
+        assert_eq!(mov.to_string(), "e7e8n");
+    }
+}
