@@ -1,7 +1,6 @@
 use std::{
     collections::HashMap,
     fmt::Display,
-    fs::OpenOptions,
     io::{BufRead, BufReader, Write},
     process::{Command, Stdio},
 };
@@ -60,7 +59,7 @@ impl PerfTest {
         let fen = Fen::from_game(&self.game);
 
         println!("Stockfish fen: {fen}");
-        self.game.print_pieces_stdout();
+        self.game.print_pieces();
 
         // Check results with stockfish
         let mut command = Command::new("stockfish")

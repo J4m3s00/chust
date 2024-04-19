@@ -1,4 +1,4 @@
-use std::{io::Write, ops::BitOrAssign};
+use std::ops::BitOrAssign;
 
 use crate::{
     bitboards::GameBitBoards,
