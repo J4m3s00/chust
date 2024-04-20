@@ -92,7 +92,7 @@ fn main() -> anyhow::Result<()> {
                     game.print_pieces();
                 }
                 "start" => {
-                    let playing_game = PlayGame::new();
+                    let playing_game = PlayGame::default();
                     let playing_game = playing_game
                         .connect_player(Box::new(CliPlayer), Color::White)
                         .expect_waiting();

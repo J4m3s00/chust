@@ -23,8 +23,7 @@ impl MoveGenerator<'_> {
             .bitboards()
             .pieces(color)
             .iter()
-            .map(|position| self.legal_moves(&position))
-            .flatten()
+            .flat_map(|position| self.legal_moves(&position))
             .collect()
     }
 

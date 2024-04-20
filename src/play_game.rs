@@ -51,13 +51,15 @@ pub struct PlayGame<State> {
     inner: State,
 }
 
-impl PlayGame<WaitingForPlayers> {
-    pub fn new() -> PlayGame<WaitingForPlayers> {
+impl Default for PlayGame<WaitingForPlayers> {
+    fn default() -> Self {
         PlayGame {
             inner: WaitingForPlayers::default(),
         }
     }
+}
 
+impl PlayGame<WaitingForPlayers> {
     pub fn connect_player(self, player: Box<dyn PlayerInterface>, color: Color) -> ConnectResult {
         if color == Color::White {
             if self.inner.possible_white_player.is_some() {
@@ -77,24 +79,22 @@ impl PlayGame<WaitingForPlayers> {
                     },
                 })
             }
+        } else if self.inner.possible_black_player.is_some() {
+            ConnectResult::AlreadyConnected
+        } else if let Some(white_player) = self.inner.possible_white_player {
+            ConnectResult::Ready(PlayGame {
+                inner: AllConnected {
+                    white_player,
+                    black_player: player,
+                },
+            })
         } else {
-            if self.inner.possible_black_player.is_some() {
-                ConnectResult::AlreadyConnected
-            } else if let Some(white_player) = self.inner.possible_white_player {
-                ConnectResult::Ready(PlayGame {
-                    inner: AllConnected {
-                        white_player,
-                        black_player: player,
-                    },
-                })
-            } else {
-                ConnectResult::Waiting(PlayGame {
-                    inner: WaitingForPlayers {
-                        possible_white_player: None,
-                        possible_black_player: Some(player),
-                    },
-                })
-            }
+            ConnectResult::Waiting(PlayGame {
+                inner: WaitingForPlayers {
+                    possible_white_player: None,
+                    possible_black_player: Some(player),
+                },
+            })
         }
     }
 }
@@ -130,10 +130,7 @@ impl PlayGame<Playing> {
         let mut try_counter = 10;
         loop {
             if let Some(mv) = player.make_move(game) {
-                self.inner
-                    .game
-                    .make_move(mv)
-                    .expect(&format!("Failed to make move"));
+                self.inner.game.make_move(mv).expect("Failed to make move");
                 break TurnResult::InProgress;
             }
             try_counter -= 1;

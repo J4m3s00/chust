@@ -25,7 +25,7 @@ impl PlayerInterface for CliPlayer {
             }
         };
 
-        let legal_moves = MoveGenerator::new(&game).all_legal_moves(game.current_turn());
+        let legal_moves = MoveGenerator::new(game).all_legal_moves(game.current_turn());
         legal_moves
             .iter()
             .find(|m| {
