@@ -114,7 +114,7 @@ fn main() -> anyhow::Result<()> {
                                 println!("Draw!");
                                 break;
                             }
-                            play_game::TurnResult::InProgress => {
+                            play_game::TurnResult::InProgress(_, _) => {
                                 playing_game.game().print_pieces();
                             }
                             play_game::TurnResult::PlayerNotMakingMoves => {

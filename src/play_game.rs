@@ -1,4 +1,6 @@
-use crate::{color::Color, game::Game, move_generation::MoveGenerator, players::PlayerInterface};
+use crate::{
+    color::Color, game::Game, move_generation::MoveGenerator, moves::Move, players::PlayerInterface,
+};
 
 #[derive(Default)]
 pub struct WaitingForPlayers {
@@ -27,7 +29,7 @@ pub enum ConnectResult {
 pub enum TurnResult {
     Checkmate,
     Stalemate,
-    InProgress,
+    InProgress(Move, Color),
     PlayerNotMakingMoves,
 }
 
@@ -114,13 +116,14 @@ impl PlayGame<AllConnected> {
 impl PlayGame<Playing> {
     pub fn wait_for_move(&mut self) -> TurnResult {
         let game = &self.inner.game;
-        let player = match game.current_turn() {
+        let current_color = game.current_turn();
+        let player = match current_color {
             Color::White => &self.inner.white_player,
             Color::Black => &self.inner.black_player,
         };
 
         if MoveGenerator::new(game)
-            .all_legal_moves(game.current_turn())
+            .all_legal_moves(current_color)
             .is_empty()
         {
             println!("Checkmate!");
@@ -130,8 +133,11 @@ impl PlayGame<Playing> {
         let mut try_counter = 10;
         loop {
             if let Some(mv) = player.make_move(game) {
-                self.inner.game.make_move(mv).expect("Failed to make move");
-                break TurnResult::InProgress;
+                self.inner
+                    .game
+                    .make_move(mv.clone())
+                    .expect("Failed to make move");
+                break TurnResult::InProgress(mv, current_color);
             }
             try_counter -= 1;
             if try_counter == 0 {

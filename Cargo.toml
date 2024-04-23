@@ -6,3 +6,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.81"
 rand = "0.8.5"
+
+[workspace]
+resolver = "2"
+members = ["lichess"]
