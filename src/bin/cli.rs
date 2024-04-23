@@ -9,6 +9,7 @@ use chust::{
     play_game::{self, PlayGame},
     players::{bot_random::BotRandom, player_cli::CliPlayer},
     position::Position,
+    search::BotBasic,
 };
 
 fn main() -> anyhow::Result<()> {
@@ -97,7 +98,7 @@ fn main() -> anyhow::Result<()> {
                         .connect_player(Box::new(CliPlayer), Color::White)
                         .expect_waiting();
                     let playing_game = playing_game
-                        .connect_player(Box::new(BotRandom), Color::Black)
+                        .connect_player(Box::new(BotBasic), Color::Black)
                         .expect_ready();
 
                     let to_play = Fen::parse_game(&Fen::from_game(&game)).unwrap();

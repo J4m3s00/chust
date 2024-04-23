@@ -94,6 +94,15 @@ impl FromStr for PromotionType {
     }
 }
 
+impl MoveType {
+    pub fn is_capture(&self) -> bool {
+        match self {
+            Self::Capture(_) | Self::PromotionCapture(_, _) | Self::EnPassantCapture => true,
+            _ => false,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;

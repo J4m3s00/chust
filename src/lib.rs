@@ -14,3 +14,4 @@ pub mod play_game;
 pub mod players;
 pub mod position;
 pub mod print_board;
+pub mod search;

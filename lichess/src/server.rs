@@ -6,6 +6,7 @@ use chust::{
     moves::Move,
     play_game::{PlayGame, TurnResult},
     players::player_cli::CliPlayer,
+    search,
 };
 use dotenv::dotenv;
 use reqwest::Client;
@@ -250,7 +251,7 @@ async fn start_game(
 
     let play_thread = spawn_blocking(move || {
         let mut game = PlayGame::default()
-            .connect_player(Box::new(CliPlayer), bot_player_color)
+            .connect_player(Box::new(search::BotBasic), bot_player_color)
             .expect_waiting()
             .connect_player(
                 Box::new(LichessPlayer::new(rx)),

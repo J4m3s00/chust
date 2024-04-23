@@ -12,7 +12,7 @@ use crate::{
     print_board::{BoardPrinter, DefaultBoardPrinter},
 };
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Game {
     current_turn: Color,
     board: Board,
