@@ -4,8 +4,8 @@ use anyhow::Context;
 use chust::{
     color::Color,
     moves::Move,
-    play_game::{PlayGame, Playing, TurnResult},
-    players::{bot_random::BotRandom, player_cli::CliPlayer},
+    play_game::{PlayGame, TurnResult},
+    players::player_cli::CliPlayer,
 };
 use dotenv::dotenv;
 use reqwest::Client;
@@ -150,6 +150,7 @@ impl LichessServer {
                 );
                 if let Some(removed_game) = self.running_games.remove(&game_end.game.game_id) {
                     removed_game.listen_handle.abort();
+                    removed_game.playing_handle.abort();
                     println!("Removed game from running handles");
                 }
                 Ok(())
