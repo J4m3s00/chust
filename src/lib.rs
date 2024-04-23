@@ -10,5 +10,7 @@ pub mod moves;
 pub mod perft;
 pub mod piece;
 pub mod piece_type;
+pub mod play_game;
+pub mod players;
 pub mod position;
 pub mod print_board;

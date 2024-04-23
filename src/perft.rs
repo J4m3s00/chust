@@ -32,7 +32,7 @@ impl PerfTestResults {
 
         // Find what the other found and we didnt
         for (mov, _) in other.nodes.iter() {
-            if self.nodes.get(mov).is_none() {
+            if !self.nodes.contains_key(mov) {
                 println!("Move {mov} not found in own results");
             }
         }

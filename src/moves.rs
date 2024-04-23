@@ -89,7 +89,7 @@ impl FromStr for PromotionType {
             "R" | "r" => Ok(PromotionType::Rook),
             "B" | "b" => Ok(PromotionType::Bishop),
             "N" | "n" => Ok(PromotionType::Knight),
-            _ => Err(anyhow::anyhow!("Invalid promotion type")),
+            _ => Err(anyhow::anyhow!("Invalid promotion type {s}")),
         }
     }
 }
