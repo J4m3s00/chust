@@ -5,7 +5,7 @@ use crate::{
     position::Position, print_board::BoardPrinter,
 };
 
-#[derive(Default, Debug, PartialEq)]
+#[derive(Default, Clone, Debug, PartialEq)]
 pub struct GameBitBoards {
     pub white_pawns: Bitboard,
     pub white_knights: Bitboard,
@@ -236,6 +236,37 @@ impl GameBitBoards {
             Color::White => &self.white_blockable_check,
             Color::Black => &self.black_blockable_check,
         }
+    }
+
+    // Helper functions for evaluation
+    pub fn material(&self, color: Color) -> i32 {
+        let mut material = 0;
+        material += self.pawn_material(color);
+        material += self.knight_material(color);
+        material += self.bishop_material(color);
+        material += self.rook_material(color);
+        material += self.queen_material(color);
+        material
+    }
+
+    pub fn pawn_material(&self, color: Color) -> i32 {
+        self.pawns(color).iter().count() as i32 * PieceType::Pawn.value()
+    }
+
+    pub fn knight_material(&self, color: Color) -> i32 {
+        self.knights(color).iter().count() as i32 * PieceType::Knight.value()
+    }
+
+    pub fn bishop_material(&self, color: Color) -> i32 {
+        self.bishops(color).iter().count() as i32 * PieceType::Bishop.value()
+    }
+
+    pub fn rook_material(&self, color: Color) -> i32 {
+        self.rooks(color).iter().count() as i32 * PieceType::Rook.value()
+    }
+
+    pub fn queen_material(&self, color: Color) -> i32 {
+        self.queens(color).iter().count() as i32 * PieceType::Queen.value()
     }
 }
 

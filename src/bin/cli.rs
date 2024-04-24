@@ -7,8 +7,9 @@ use chust::{
     move_generation::MoveGenerator,
     moves::{Move, MoveType},
     play_game::{self, PlayGame},
-    players::{bot_random::BotRandom, player_cli::CliPlayer},
+    players::player_cli::CliPlayer,
     position::Position,
+    search::{best_moves, BotBasic},
 };
 
 fn main() -> anyhow::Result<()> {
@@ -88,7 +89,7 @@ fn main() -> anyhow::Result<()> {
                             promotion_type && m.to == to_make.to && m.from == to_make.from
                         })
                         .with_context(|| format!("Could not find valid move {:?}", legal_moves))?;
-                    let _ = game.make_move(mov.clone());
+                    let _ = game.make_move(*mov);
                     game.print_pieces();
                 }
                 "start" => {
@@ -97,7 +98,7 @@ fn main() -> anyhow::Result<()> {
                         .connect_player(Box::new(CliPlayer), Color::White)
                         .expect_waiting();
                     let playing_game = playing_game
-                        .connect_player(Box::new(BotRandom), Color::Black)
+                        .connect_player(Box::new(BotBasic), Color::Black)
                         .expect_ready();
 
                     let to_play = Fen::parse_game(&Fen::from_game(&game)).unwrap();
@@ -125,6 +126,12 @@ fn main() -> anyhow::Result<()> {
                                 break;
                             }
                         }
+                    }
+                }
+                "search" => {
+                    let search = best_moves(&mut game);
+                    for (mov, score) in search.into_iter().flatten() {
+                        println!("{}: {}", mov, score);
                     }
                 }
                 "um" => {

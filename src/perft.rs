@@ -117,7 +117,7 @@ impl PerfTest {
             .collect::<Vec<_>>();
 
         for mov in all_legal_moves {
-            if let Err(e) = self.game.make_move(mov.clone()) {
+            if let Err(e) = self.game.make_move(mov) {
                 println!("Failed to make move {}: {}", mov, e);
                 self.game.print_pieces();
                 panic!("Failed to make move");
@@ -150,7 +150,7 @@ impl PerfTest {
 
         let mut total_moves = 0;
         for mov in all_legal_moves {
-            if let Err(e) = self.game.make_move(mov.clone()) {
+            if let Err(e) = self.game.make_move(mov) {
                 println!("Failed to make move {}: {}", mov, e);
                 self.game.print_pieces();
                 panic!("Failed to make move");

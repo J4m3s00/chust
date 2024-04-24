@@ -133,10 +133,7 @@ impl PlayGame<Playing> {
         let mut try_counter = 10;
         loop {
             if let Some(mv) = player.make_move(game) {
-                self.inner
-                    .game
-                    .make_move(mv.clone())
-                    .expect("Failed to make move");
+                self.inner.game.make_move(mv).expect("Failed to make move");
                 break TurnResult::InProgress(mv, current_color);
             }
             try_counter -= 1;
