@@ -283,14 +283,14 @@ impl Game {
     }
 
     pub fn last_move(&self) -> Option<Move> {
-        self.move_stack.last().map(|(mov, _, _, _)| mov.clone())
+        self.move_stack.last().map(|(mov, _, _, _)| *mov)
     }
 
     // The newest move is at the end of the stack
     pub fn move_stack(&self) -> Vec<Move> {
         self.move_stack
             .iter()
-            .map(|(mov, _, _, _)| mov.clone())
+            .map(|(mov, _, _, _)| *mov)
             .collect()
     }
 

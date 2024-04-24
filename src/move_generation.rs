@@ -70,7 +70,6 @@ impl MoveGenerator<'_> {
                     return blockable.contains(&mov.to);
                 }
                 _ => {
-                    println!("{:?}", blockable_checks);
                     // We cant block, because more than one piece is attacking or we are attacked be a knight or pawn
                     return false;
                 }

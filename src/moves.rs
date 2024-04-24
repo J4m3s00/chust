@@ -2,7 +2,7 @@ use std::{fmt::Display, str::FromStr};
 
 use crate::{piece_type::PieceType, position::Position};
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum PromotionType {
     Queen,
     Rook,
@@ -10,7 +10,7 @@ pub enum PromotionType {
     Knight,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum MoveType {
     Quiet,
     Capture(PieceType),
@@ -21,7 +21,7 @@ pub enum MoveType {
     PromotionCapture(PromotionType, PieceType),
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Move {
     pub from: Position,
     pub to: Position,
@@ -96,9 +96,17 @@ impl FromStr for PromotionType {
 
 impl MoveType {
     pub fn is_capture(&self) -> bool {
+        matches!(
+            self,
+            Self::Capture(_) | Self::PromotionCapture(_, _) | Self::EnPassantCapture
+        )
+    }
+
+    pub fn capture_type(&self) -> Option<PieceType> {
         match self {
-            Self::Capture(_) | Self::PromotionCapture(_, _) | Self::EnPassantCapture => true,
-            _ => false,
+            Self::Capture(piece) | Self::PromotionCapture(_, piece) => Some(*piece),
+            Self::EnPassantCapture => Some(PieceType::Pawn),
+            _ => None,
         }
     }
 }

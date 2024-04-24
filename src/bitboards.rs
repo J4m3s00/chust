@@ -250,23 +250,23 @@ impl GameBitBoards {
     }
 
     pub fn pawn_material(&self, color: Color) -> i32 {
-        self.pawns(color).iter().count() as i32 * 100
+        self.pawns(color).iter().count() as i32 * PieceType::Pawn.value()
     }
 
     pub fn knight_material(&self, color: Color) -> i32 {
-        self.knights(color).iter().count() as i32 * 320
+        self.knights(color).iter().count() as i32 * PieceType::Knight.value()
     }
 
     pub fn bishop_material(&self, color: Color) -> i32 {
-        self.bishops(color).iter().count() as i32 * 330
+        self.bishops(color).iter().count() as i32 * PieceType::Bishop.value()
     }
 
     pub fn rook_material(&self, color: Color) -> i32 {
-        self.rooks(color).iter().count() as i32 * 500
+        self.rooks(color).iter().count() as i32 * PieceType::Rook.value()
     }
 
     pub fn queen_material(&self, color: Color) -> i32 {
-        self.queens(color).iter().count() as i32 * 900
+        self.queens(color).iter().count() as i32 * PieceType::Queen.value()
     }
 }
 
